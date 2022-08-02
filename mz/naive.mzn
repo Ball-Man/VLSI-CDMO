@@ -6,3 +6,5 @@ int: n;
 array[1..n, 0..1] of int: circuits;
 
 solve satisfy;
+
+output ["\(width)\n\(n)\n\(circuits)"];
