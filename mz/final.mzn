@@ -23,18 +23,26 @@ constraint min(positions) >= 0;
 constraint max([positions[i, 0] + circuits[i, 0]| i in 1..n]) <= width;
 constraint height = max([positions[i, 1] + circuits[i, 1]| i in 1..n]);
 
-/*
+
 % Contrain overlapping rectangles
+/*
 constraint forall(i in 1..n, j in 1..n where i < j) (
   not circuit_collision(i, j)
-);
+);*/
 
 predicate circuit_collision(int: a, int: b) = (
   positions[a, 0] < positions[b, 0] + circuits[b, 0]
    /\ positions[a, 0] + circuits[a, 0] > positions[b, 0]
    /\ positions[a, 1] < positions[b, 1] + circuits[b, 1]
    /\ positions[a, 1] + circuits[a, 1] > positions[b, 1]
-);*/
+);
+
+% Redundant constraints
+constraint cumulative(
+  col(positions, 0), col(circuits, 0), col(circuits, 1), height);
+constraint cumulative(
+  col(positions, 1), col(circuits, 1), col(circuits, 0), width);
+
 
 solve minimize height;
 
