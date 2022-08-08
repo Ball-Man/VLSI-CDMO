@@ -43,8 +43,23 @@ constraint cumulative(
 constraint cumulative(
   col(positions, 1), col(circuits, 1), col(circuits, 0), width);
 
+% Simmetry breaking constraints
+constraint lex_lesseq(
+  col(positions, 0),
+  [width - positions[i, 0] - circuits[i, 0]| i in 1..n]);
 
-solve minimize height;
+/*
+constraint lex_lesseq(
+  col(positions, 1),
+  [height - positions[i, 1] - circuits[i, 1]| i in 1..n]);
+*/
+%height = 18;
+solve
+  :: seq_search([
+    int_search([height], input_order, indomain_min),
+    int_search(positions, dom_w_deg, indomain_min)])
+  minimize height;
+%solve satisfy;
 
 output [
   "\(width) \(height)\n\(n)\n",
