@@ -6,11 +6,14 @@ int: n;
 % Array of circuits (pairs): circuits[i, j] selects the j-th dimension of the
 % i-th circuit (dimension 0 is the width, dimension 1 is the height).
 array[1..n, 0..1] of int: circuits;
+array[1..n] of int: areas = [circuits[i, 0] * circuits[i, 1]| i in 1..n];
 int: max_height = sum(col(circuits, 1));
-int: min_height = max(col(circuits, 1));
+int: min_height = max([max(areas) div width, max(col(circuits, 1))]);
 
 var min_height..max_height: height;
-array[1..n, 0..1] of var 0..max_height: positions;
+array[1..n, 0..1] of var 0..max(
+  [max_height - min(col(circuits, 1)),
+   width - min(col(circuits, 0))]): positions;
 
 constraint diffn(
   col(positions, 0),
