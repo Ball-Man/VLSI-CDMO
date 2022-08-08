@@ -15,6 +15,7 @@ array[1..n, 0..1] of var 0..max(
   [max_height - min(col(circuits, 1)),
    width - min(col(circuits, 0))]): positions;
 
+% Constrain overlapping rectangles
 constraint diffn(
   col(positions, 0),
   col(positions, 1),
@@ -24,7 +25,6 @@ constraint diffn(
 % Constrain domain
 constraint max([positions[i, 0] + circuits[i, 0]| i in 1..n]) <= width;
 constraint height = max([positions[i, 1] + circuits[i, 1]| i in 1..n]);
-
 
 % Redundant constraints
 
