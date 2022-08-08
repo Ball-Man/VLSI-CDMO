@@ -46,10 +46,16 @@ constraint lex_lesseq(
 %height = 18;
 
 % Search strategy
+array[1..n] of float: weighted_areas = [
+  (1 - abs(circuits[i, 0] - circuits[i, 1]) / (circuits[i, 0] + circuits[i, 1]))
+  * areas[i]
+  | i in 1..n
+];
+
 array[0..1, 1..n] of var dom_array(positions): sorted_positions_r =
   array2d(0..1, 1..n,
-    reverse(sort_by(col(positions, 0), areas))
-    ++ reverse(sort_by(col(positions, 1), areas))
+    reverse(sort_by(col(positions, 0), weighted_areas))
+    ++ reverse(sort_by(col(positions, 1), weighted_areas))
   );
 
 solve
