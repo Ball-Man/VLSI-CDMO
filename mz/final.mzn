@@ -22,7 +22,6 @@ constraint diffn(
   col(circuits, 1));
 
 % Constrain domain
-constraint min(positions) >= 0;
 constraint max([positions[i, 0] + circuits[i, 0]| i in 1..n]) <= width;
 constraint height = max([positions[i, 1] + circuits[i, 1]| i in 1..n]);
 
