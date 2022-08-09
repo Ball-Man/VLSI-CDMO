@@ -52,11 +52,10 @@ constraint symmetry_breaking_constraint(lex_lesseq(
 
 % Vertical simmetry can be broken similarly. Currently disabled since I suspect
 % soem interference with the horizontal one.
-/*
-constraint lex_lesseq(
+constraint symmetry_breaking_constraint(lex_lesseq(
   col(positions, 1),
-  [height - positions[i, 1] - circuits[i, 1]| i in 1..n]);
-*/
+  [height - positions[i, 1] - circuits[i, 1]| i in 1..n]));
+
 
 % Search strategy
 /*
