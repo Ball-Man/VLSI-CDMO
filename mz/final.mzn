@@ -14,7 +14,7 @@ the minimal bounding box height (total area divided by width).
 Maximum height is given by the sum of all the heights of the given circuits.
 */
 int: max_height = sum(col(circuits, 1));
-int: min_height = max([max(areas) div width, max(col(circuits, 1))]);
+int: min_height = max([max(areas) div width, max(col(circuits, 1))]);       %questa sarebbe max([sum(areas) div...) ?
 
 var min_height..max_height: height;
 array[1..n, 0..1] of var 0..max(
