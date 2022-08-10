@@ -2,15 +2,25 @@ from z3 import *
 from itertools import combinations
 
 #Generic cardinality constraints
+#IMPORTANTE: Provare altri encodings (questi sono i "sequential" encoding, O(n) clauses
 
 def at_least_one(bool_vars):
     return Or(bool_vars)
 
-def at_most_one(bool_vars):
-    return [Not(And(pair[0], pair[1])) for pair in combinations(bool_vars, 2)]
+def at_most_one(bool_vars, name):
+    constraints = []
+    n = len(bool_vars)
+    s = [Bool(f"s_{name}_{i}") for i in range(n - 1)]
+    constraints.append(Or(Not(bool_vars[0]), s[0]))
+    constraints.append(Or(Not(bool_vars[n-1]), Not(s[n-2])))
+    for i in range(1, n - 1):
+        constraints.append(Or(Not(bool_vars[i]), s[i]))
+        constraints.append(Or(Not(bool_vars[i]), Not(s[i-1])))
+        constraints.append(Or(Not(s[i-1]), s[i]))
+    return And(constraints)
 
-def exactly_one(bool_vars):
-    return at_most_one(bool_vars) + [at_least_one(bool_vars)]
+def exactly_one(bool_vars, name):
+    return And(at_least_one(bool_vars), at_most_one(bool_vars, name))
 ####################################################################################################
 
 #flatten list:
@@ -32,18 +42,37 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
     #(Non so quale delle alternative sia meglio per ora).
     Height = [Bool(f'height_{i}') for i in range(min_height, max_height + 1)]
     
-    max_x_pos = [width - dimensions[k][0] for k in range(nofrectangles)]
+    #max_x_pos = [width - dimensions[k][0] for k in range(nofrectangles)]
     
-    X = [[[Bool(f'x_{i}_{j}_{k}') for i in range(width - dimensions[k][0])] for j in range(max_height - dimensions[k][1])] for k in range(nofrectangles)]
-    #Voglio che X[i][j][k] == 1 se e solo se l'origine del rettangolo k è nelle coordinate i,j
+    X = [[[Bool(f'x_{i}_{j}_{k}') for i in range(width - dimensions[k][0] + 1)] for j in range(max_height - dimensions[k][1] + 1)] for k in range(nofrectangles)]
+    #Voglio che X[k][j][i] == 1 se e solo se l'origine del rettangolo k è nelle coordinate i,j
     
     s = Solver()
 
     #vincolo che esattamente una delle variabili-altezza sia T:
-    s.add(exactly_one(Height))
+    s.add(exactly_one(Height, f"height"))
 
     for k in range(nofrectangles):  #ogni rettangolo ha esattamente un'origine
-        s.add(exactly_one(flatten(X[k])))
+        s.add(exactly_one(flatten(X[k]), f"origin_{k}"))
+
+
+
+    #constraints no-overlap:
+    for k in range(nofrectangles):
+        for i in range(width - dimensions[k][0] + 1):
+            for j in range(max_height - dimensions[k][1] + 1):
+                for k1 in range(nofrectangles):
+                    if k != k1:
+                        for w in range(dimensions[k][0]):
+                            for h in range(dimensions[k][1]):
+                                if i+w <= width - dimensions[k1][0] and j+h <= max_height - dimensions[k1][1]:
+                                    s.add(Implies(X[k][j][i], Not(X[k1][j+h][i+w])))
+           # for w in range(dimensions[k]
+
+    #possibili implied constraints:
+           #1) in ogni i,j ci può essere al più un'origine di un rettangolo k
+           #2) per ogni rettangolo k, Se X[k][j][i], allora i + dimensions[k][0] <= width
+           #3) analogo per l'altezza
 
 
 
@@ -53,8 +82,7 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
     s.check()
     m = s.model()
     
-    print(flatten(X[3]))
-
+    return [X[k][j][i] for k in range(nofrectangles) for j in range(max_height - dimensions[k][1] + 1) for i in range(width - dimensions[k][0] + 1) if m.evaluate(X[k][j][i])]
 
 
 
