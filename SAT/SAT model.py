@@ -13,6 +13,10 @@ def exactly_one(bool_vars):
     return at_most_one(bool_vars) + [at_least_one(bool_vars)]
 ####################################################################################################
 
+#flatten list:
+def flatten(l):
+    return [item for sublist in l for item in sublist]
+####################################################################################################
 
 
 def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di coppie di coordinate [x,y]
@@ -30,7 +34,7 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
     
     max_x_pos = [width - dimensions[k][0] for k in range(nofrectangles)]
     
-    X = [[[Bool(f'x_{i}_{j}_{k}') for i in range(width)] for j in range(max_height)] for k in range(nofrectangles)]
+    X = [[[Bool(f'x_{i}_{j}_{k}') for i in range(width - dimensions[k][0])] for j in range(max_height - dimensions[k][1])] for k in range(nofrectangles)]
     #Voglio che X[i][j][k] == 1 se e solo se l'origine del rettangolo k è nelle coordinate i,j
     
     s = Solver()
@@ -39,7 +43,7 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
     s.add(exactly_one(Height))
 
     for k in range(nofrectangles):  #ogni rettangolo ha esattamente un'origine
-        s.add(exactly_one([[X[k][j][i] for i in range(width)] for j in range(max_height)]))
+        s.add(exactly_one(flatten(X[k])))
 
 
 
@@ -49,7 +53,7 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
     s.check()
     m = s.model()
     
-    print(X)
+    print(flatten(X[3]))
 
 
 
