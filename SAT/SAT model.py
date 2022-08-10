@@ -63,10 +63,9 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
             for j in range(max_height - dimensions[k][1] + 1):
                 for k1 in range(nofrectangles):
                     if k != k1:
-                        for w in range(dimensions[k][0]):
-                            for h in range(dimensions[k][1]):
-                                if i+w <= width - dimensions[k1][0] and j+h <= max_height - dimensions[k1][1]:
-                                    s.add(Implies(X[k][j][i], Not(X[k1][j+h][i+w])))
+                        for i1 in range(max(i-dimensions[k1][0]+1,0), min(i+dimensions[k][0], width - dimensions[k1][0] +1)):
+                            for j1 in range(max(j-dimensions[k1][1]+1,0), min(j+dimensions[k][1], max_height - dimensions[k1][1] +1)):     #si dovrebbe capire graficamente                                                                                         
+                                s.add(Implies(X[k][j][i], Not(X[k1][j1][i1])))
            # for w in range(dimensions[k]
 
     #possibili implied constraints:
