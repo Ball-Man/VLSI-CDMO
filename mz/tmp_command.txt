@@ -1,1 +1,0 @@
-minizinc --solver gecode --soln-sep "" naive.mzn ..\instances_json\ins-2.json -o out-ins-2.txt
