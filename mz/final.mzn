@@ -40,9 +40,9 @@ constraint redundant_constraint(cumulative(
 constraint redundant_constraint(cumulative(
   col(positions, 1), col(circuits, 1), col(circuits, 0), width));
 
-% Simmetry breaking constraints
+% Symmetry breaking constraints
 /*
-Horizontal simmetry is given by solutions where all the elements are "flipped"
+Horizontal symmetry is given by solutions where all the elements are "flipped"
 so that circuit_new_x = width - circuit_x - circuit_width.
 By imposing lexicographic ordering we avoid the existence of such a solution.
 */
@@ -50,7 +50,7 @@ constraint symmetry_breaking_constraint(lex_lesseq(
   col(positions, 0),
   [width - positions[i, 0] - circuits[i, 0]| i in 1..n]));
 
-% Vertical simmetry can be broken similarly. Currently disabled since I suspect
+% Vertical symmetry can be broken similarly. Currently disabled since I suspect
 % soem interference with the horizontal one.
 constraint symmetry_breaking_constraint(lex_lesseq(
   col(positions, 1),
