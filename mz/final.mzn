@@ -56,6 +56,15 @@ constraint symmetry_breaking_constraint(lex_lesseq(
   col(positions, 1),
   [height - positions[i, 1] - circuits[i, 1]| i in 1..n]));
 
+% Break symmetry with identical chips
+% However, these instances (without rotation) do not present identical chips
+constraint symmetry_breaking_constraint(
+  forall (i in 1..n, j in 1..n where i < j) (
+    if circuits[i, 0] == circuits[j, 0] /\ circuits[i, 1] == circuits[j, 1] then
+      lex_lesseq(row(positions, i), row(positions, j))
+    endif
+  )
+);
 
 % Search strategy
 /*
