@@ -8,10 +8,12 @@ import json
 import datetime
 import os
 import os.path as pt
+import argparse
 
 from minizinc import Instance, Model, Solver
 
 DEFAULT_MODEL_FILE = pt.join(pt.dirname(__file__), 'final.mzn')
+DEFAULT_ROT_MODEL_FILE = pt.join(pt.dirname(__file__), 'final_rotation.mzn')
 # Path to json input instances, converted using convert_instances.py
 DEFAULT_INSTANCES_DIR = pt.join(pt.dirname(__file__), '..', 'instances_json')
 DEFAULT_OUTPUT_DIR = pt.join(pt.dirname(__file__), 'out')
@@ -29,9 +31,9 @@ def dump_statistics(statistics, status, fp=sys.stdout):
     json.dump(statistics, fp, indent=4)
 
 
-def main():
+def main(model_file=DEFAULT_MODEL_FILE):
     solver = Solver.lookup('chuffed')
-    model = Model([DEFAULT_MODEL_FILE])
+    model = Model([model_file])
 
     # Define a new instance for each input file
     for instance_file in glob.glob(pt.join(DEFAULT_INSTANCES_DIR, '*')):
@@ -65,4 +67,18 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(
+        description='Convenience script for model execution. Execute the CP '
+                    'model on all given instances.')
+    parser.add_argument('-r', '--rotation', dest='rotation',
+                        action='store_true', default=False,
+                        help='if specified, the rotation aware model will be '
+                             'used')
+    args = parser.parse_args()
+
+    model_file = DEFAULT_MODEL_FILE
+    if args.rotation:
+        model_file = DEFAULT_ROT_MODEL_FILE
+    print(f'USING MODEL {model_file}')
+
+    main(model_file=model_file)
