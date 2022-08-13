@@ -54,6 +54,9 @@ def main(rotation: bool = False):
             instance_data['circuits'][k] = (instance_data['circuits'][k]
                                             + [x, y])
 
+        # Output results and statistics
+        dump_result(instance_data, height)
+
         # Dump results and statistics on file
         os.makedirs(DEFAULT_OUTPUT_DIR, exist_ok=True)
         output_basename = (f'out-{pt.splitext(pt.basename(instance_file))[0]}'
