@@ -78,12 +78,23 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
 
     #constraint di non sovrapposizione:
 
-    s.check()
-    m = s.model()
-    
-    return [X[k][j][i] for k in range(nofrectangles) for j in range(max_height - dimensions[k][1] + 1) for i in range(width - dimensions[k][0] + 1) if m.evaluate(X[k][j][i])]
+    check_result = s.check()
 
 
+    # If satisfiable
+    if check_result == sat:
+        m = s.model()
+
+        # For convenience I also want the height to be returned
+        # Setting it to 0 for now, but in the end it shall contain the
+        # optimal height value
+        height = 0
+
+        solutions = [X[k][j][i] for k in range(nofrectangles) for j in range(max_height - dimensions[k][1] + 1) for i in range(width - dimensions[k][0] + 1) if m.evaluate(X[k][j][i])]
+        return height, solutions
+
+    # If unsatisfiable
+    return None
 
 
 
