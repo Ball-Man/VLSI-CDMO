@@ -28,6 +28,16 @@ def dump_result(instance_data, height, fp=sys.stdout):
                   for circuit in instance_data['circuits'])
 
 
+def dump_statistics(statistics, fp=sys.stdout):
+    """Format statistics and dump it (json)."""
+    statistics_dict = {}
+
+    for key in statistics.keys():
+        statistics_dict[key] = statistics.get_key_value(key)
+
+    json.dump(statistics_dict, fp, indent=4)
+
+
 def main(rotation: bool = False):
     # Solve SAT problem for each instance
     for instance_file in glob.glob(pt.join(DEFAULT_INSTANCES_DIR, '*')):
@@ -44,7 +54,7 @@ def main(rotation: bool = False):
             continue
 
         # Unpack and decode
-        height, variables = model_results
+        height, variables, statistics = model_results
 
         for var in map(str, variables):
             match = SAT_INSTANCE_DECODER_RE.match(var)
@@ -56,18 +66,19 @@ def main(rotation: bool = False):
 
         # Output results and statistics
         dump_result(instance_data, height)
+        print(statistics)
 
         # Dump results and statistics on file
         os.makedirs(DEFAULT_OUTPUT_DIR, exist_ok=True)
         output_basename = (f'out-{pt.splitext(pt.basename(instance_file))[0]}'
                            '.txt')
         stats_basename = (f'stats-{pt.splitext(pt.basename(instance_file))[0]}'
-                          '.txt')
+                          '.json')
         with open(pt.join(DEFAULT_OUTPUT_DIR, output_basename), 'w') as fout:
             dump_result(instance_data, height, fout)
 
-        # with open(pt.join(DEFAULT_OUTPUT_DIR, stats_basename), 'w') as fout:
-        #     dump_statistics(result.statistics, result.status, fout)
+        with open(pt.join(DEFAULT_OUTPUT_DIR, stats_basename), 'w') as fout:
+            dump_statistics(statistics, fout)
 
 
 if __name__ == '__main__':
