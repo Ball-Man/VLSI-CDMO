@@ -1,0 +1,17 @@
+paths: 109
+flatIntVars: 107
+flatIntConstraints: 69
+method: minimize
+flatTime: 0:00:00.325288
+time: 289206
+initTime: 0:00:00.000821
+solveTime: 0:04:48.864000
+solutions: 1
+variables: 107
+propagators: 70
+propagations: 401203709
+nodes: 32161031
+failures: 16080509
+restarts: 0
+peakDepth: 50
+nSolutions: 1
