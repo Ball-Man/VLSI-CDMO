@@ -80,7 +80,8 @@ constraint symmetry_breaking_constraint(lex_lesseq(
 % However, these instances (without rotation) do not present identical chips
 constraint symmetry_breaking_constraint(
   forall (i in 1..n, j in 1..n where i < j) (
-    if var_circuits[i, 0] == var_circuits[j, 0] /\ var_circuits[i, 1] == var_circuits[j, 1] then
+    if var_circuits[i, 0] == var_circuits[j, 0]
+       /\ var_circuits[i, 1] == var_circuits[j, 1] then
       lex_lesseq(row(positions, i), row(positions, j))
     endif
   )
@@ -118,6 +119,7 @@ solve
 output [
   "\(width) \(height)\n\(n)\n",
 ] ++ [
-  "\(var_circuits[i, 0]) \(var_circuits[i, 1]) \(positions[i, 0]) \(positions[i, 1])\n"
+  "\(var_circuits[i, 0]) \(var_circuits[i, 1]) "
+  ++ "\(positions[i, 0]) \(positions[i, 1])\n"
   | i in 1..n
 ];
