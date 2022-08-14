@@ -8,7 +8,7 @@
     "evaluatedHalfReifiedConstraints": 8,
     "eliminatedImplications": 20,
     "method": "minimize",
-    "flatTime": "0:00:00.285625",
+    "flatTime": "0:00:00.285900",
     "time": "0:00:00.003000",
     "nSolutions": 1,
     "nodes": 18,
@@ -29,6 +29,6 @@
     "optTime": "0:00:00",
     "baseMem": 0.0,
     "trailMem": 0.0,
-    "randomSeed": 1660233422,
+    "randomSeed": 1660494282,
     "status": "OPTIMAL_SOLUTION"
 }
