@@ -17,17 +17,20 @@ var set of 0..n: rotated;
 array[1..n, 0..1] of var int: var_circuits;
 
 /*
-Minimum height is given by the max between the highest given circuit and the
+Minimum height is given by the max between the highest (or widest, taking
+rotations into account) given circuit and the
 the minimal bounding box height (total area divided by width).
-Maximum height is given by the sum of all the heights of the given circuits.
+Maximum height is given by the sum of all the maximal dimensions (assuming
+we always rotate the chips so that the longest side is used as height).
 */
-int: max_height = sum(col(circuits, 1));
-int: min_height = max([sum(areas) div width, max(col(circuits, 1))]);
+int: min_circuit_side = min(col(circuits, 0) ++ col(circuits, 1));
+int: max_circuit_side = max(col(circuits, 0) ++ col(circuits, 1));
+int: max_height = sum([max(row(circuits, i))| i in 1..n]);
+int: min_height = max([sum(areas) div width, max_circuit_side]);
 
 var min_height..max_height: height;
 array[1..n, 0..1] of var 0..max(
-  [max_height - min(col(circuits, 1)),
-   width - min(col(circuits, 0))]): positions;
+  [max_height - min_circuit_side, width - max_circuit_side]): positions;
 
 % Constrain rotations
 constraint col(var_circuits, 0) = [
