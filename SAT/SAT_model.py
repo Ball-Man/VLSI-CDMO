@@ -3,6 +3,7 @@ from itertools import combinations
 
 #Generic cardinality constraints
 #IMPORTANTE: Provare altri encodings (questi sono i "sequential" encoding, O(n) clauses
+#Per ora sto provando a verificare la satisfiability con la min_height, idealmente Height dovrebbe essere una variabile
 
 def at_least_one(bool_vars):
     return Or(bool_vars)
@@ -34,7 +35,7 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
     total_area = 0
     for i in range(nofrectangles):
         total_area += dimensions[i][0] * dimensions[i][1]
-    min_height = max(total_area // width, max([(dimensions[i])[1] for i in range(nofrectangles)]))
+    min_height = max(total_area // width, max([dimensions[i][1] for i in range(nofrectangles)]))
     max_height = sum([i[0] for i in dimensions])            #stessi bound sull'altezza del modello CP
 
     #Variabile booleana Height[k] uguale a 1 se e solo se l'altezza della soluzione coincide Height[min_height+k].
@@ -44,13 +45,13 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
     
     #max_x_pos = [width - dimensions[k][0] for k in range(nofrectangles)]
     
-    X = [[[Bool(f'x_{i}_{j}_{k}') for i in range(width - dimensions[k][0] + 1)] for j in range(max_height - dimensions[k][1] + 1)] for k in range(nofrectangles)]
+    X = [[[Bool(f'x_{i}_{j}_{k}') for i in range(width - dimensions[k][0] + 1)] for j in range(min_height - dimensions[k][1] + 1)] for k in range(nofrectangles)]   #max_height--->min_height
     #Voglio che X[k][j][i] == 1 se e solo se l'origine del rettangolo k è nelle coordinate i,j
     
     s = Solver()
 
     #vincolo che esattamente una delle variabili-altezza sia T:
-    s.add(exactly_one(Height, f"height"))
+    #s.add(exactly_one(Height, f"height"))
 
     for k in range(nofrectangles):  #ogni rettangolo ha esattamente un'origine
         s.add(exactly_one(flatten(X[k]), f"origin_{k}"))
@@ -60,11 +61,11 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
     #constraints no-overlap:
     for k in range(nofrectangles):
         for i in range(width - dimensions[k][0] + 1):
-            for j in range(max_height - dimensions[k][1] + 1):
-                for k1 in range(nofrectangles):
-                    if k != k1:
+            for j in range(min_height - dimensions[k][1] + 1): ##max_height--->min_height
+                for k1 in range(k+1, nofrectangles): #prima era range(nofrectangles), con if k != k1, ma così si tolgono un po' di implied constraints (modello è più piccolo)
+                    #if k != k1:
                         for i1 in range(max(i-dimensions[k1][0]+1,0), min(i+dimensions[k][0], width - dimensions[k1][0] +1)):
-                            for j1 in range(max(j-dimensions[k1][1]+1,0), min(j+dimensions[k][1], max_height - dimensions[k1][1] +1)):     #si dovrebbe capire graficamente                                                                                         
+                            for j1 in range(max(j-dimensions[k1][1]+1,0), min(j+dimensions[k][1], min_height - dimensions[k1][1] +1)):     #si dovrebbe capire graficamente #max_height--->min_height                                                                                         
                                 s.add(Implies(X[k][j][i], Not(X[k1][j1][i1])))
            # for w in range(dimensions[k]
 
@@ -72,11 +73,6 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
            #1) in ogni i,j ci può essere al più un'origine di un rettangolo k
            #2) per ogni rettangolo k, Se X[k][j][i], allora i + dimensions[k][0] <= width
            #3) analogo per l'altezza
-
-
-
-
-    #constraint di non sovrapposizione:
 
     check_result = s.check()
 
@@ -89,7 +85,7 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
         # optimal height value
         height = 0
 
-        solutions = [X[k][j][i] for k in range(nofrectangles) for j in range(max_height - dimensions[k][1] + 1) for i in range(width - dimensions[k][0] + 1) if m.evaluate(X[k][j][i])]
+        solutions = [X[k][j][i] for k in range(nofrectangles) for j in range(min_height - dimensions[k][1] + 1) for i in range(width - dimensions[k][0] + 1) if m.evaluate(X[k][j][i])] #max_height--->min_height
         return height, solutions, s.statistics()
 
     # If unsatisfiable
