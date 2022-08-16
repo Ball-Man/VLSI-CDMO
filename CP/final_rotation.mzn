@@ -13,7 +13,7 @@ A set of variables is used to discriminate which chips are rotated.
 A new array of circuit sizes is defined based on this (same indexing as the
 original one).
 */
-var set of 0..n: rotated;
+array[1..n] of var bool: rotated;
 array[1..n, 0..1] of var int: var_circuits;
 
 /*
@@ -34,11 +34,11 @@ array[1..n, 0..1] of var 0..max(
 
 % Constrain rotations
 constraint col(var_circuits, 0) = [
-  if i in rotated then circuits[i, 1] else circuits[i, 0] endif| i in 1..n
+  if rotated[i] then circuits[i, 1] else circuits[i, 0] endif| i in 1..n
 ];
 
 constraint col(var_circuits, 1) = [
-  if i in rotated then circuits[i, 0] else circuits[i, 1] endif| i in 1..n
+  if rotated[i] then circuits[i, 0] else circuits[i, 1] endif| i in 1..n
 ];
 
 % Constrain overlapping rectangles
@@ -110,7 +110,7 @@ array[0..1, 1..n] of var dom_array(positions): sorted_positions_r =
 solve
   :: seq_search([
     int_search([height], input_order, indomain_min),
-    set_search([rotated], input_order, indomain_min),
+    bool_search(rotated, input_order, indomain_min),
     int_search([sorted_positions_r[j, i]| j in 0..1, i in 1..n], input_order,
                indomain_min)])
   minimize height;
