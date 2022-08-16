@@ -31,6 +31,16 @@ def flatten(l):
 
 def apply_rotations(width, nofrectangles, dimensions):
     s=Solver()
+    
+    total_area = 0
+    
+    for i in range(nofrectangles):
+        total_area += dimensions[i][0] * dimensions[i][1]
+    if total_area % width == 0:         #If total area is not divisible by width we round up
+        height = max(total_area // width, max([dimensions[i][1] for i in range(nofrectangles)]))
+    else:
+        height = max(total_area // width + 1, max([dimensions[i][1] for i in range(nofrectangles)]))
+
     Rotated = [Bool(f'rotated_{k}') for k in range(nofrectangles)]
     for k in range(nofrectangles):  #square rectangles and rectangles with height greater than the max width won't be rotated
         if dimensions[k][0] == dimensions[k][1] or dimensions[k][1] > width:
@@ -45,7 +55,7 @@ def apply_rotations(width, nofrectangles, dimensions):
                     actual_dimensions.append(dimensions[k][::-1])
                 else:
                     actual_dimensions.append(dimensions[k])
-            a= sat_vlsi(width, nofrectangles, actual_dimensions)
+            a = sat_vlsi(width, nofrectangles, actual_dimensions, height)
             if a != None:
                 return a
             formulas=[]
@@ -63,18 +73,9 @@ def apply_rotations(width, nofrectangles, dimensions):
         
 
 
-def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di coppie di coordinate [x,y]
+def sat_vlsi(width, nofrectangles, dimensions, min_height): #dimensions è una lista di coppie di coordinate [x,y]
 
     s = Solver()
-
-    total_area = 0
-    for i in range(nofrectangles):
-        total_area += dimensions[i][0] * dimensions[i][1]
-    if total_area % width == 0:         #If total area is not divisible by width we round up
-        min_height = max(total_area // width, max([dimensions[i][1] for i in range(nofrectangles)]))
-    else:
-        min_height = max(total_area // width + 1, max([dimensions[i][1] for i in range(nofrectangles)]))
-    max_height = sum([i[1] for i in dimensions])            #stessi bound sull'altezza del modello CP
 
     #Variabile booleana Height[k] uguale a 1 se e solo se l'altezza della soluzione coincide Height[min_height+k].
     #Aggiungo il vincolo che esattamente una delle variabili è T, ma è ridondante: basterebbe che al massimo una lo sia.

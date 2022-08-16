@@ -35,8 +35,11 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
     total_area = 0
     for i in range(nofrectangles):
         total_area += dimensions[i][0] * dimensions[i][1]
-    min_height = max(total_area // width, max([dimensions[i][1] for i in range(nofrectangles)]))
-    max_height = sum([i[0] for i in dimensions])            #stessi bound sull'altezza del modello CP
+    if total_area % width == 0:         #If total area is not divisible by width we round up
+        min_height = max(total_area // width, max([dimensions[i][1] for i in range(nofrectangles)]))
+    else:
+        min_height = max(total_area // width + 1, max([dimensions[i][1] for i in range(nofrectangles)]))
+    max_height = sum([i[1] for i in dimensions])            #stessi bound sull'altezza del modello CP
 
     #Variabile booleana Height[k] uguale a 1 se e solo se l'altezza della soluzione coincide Height[min_height+k].
     #Aggiungo il vincolo che esattamente una delle variabili è T, ma è ridondante: basterebbe che al massimo una lo sia.
@@ -83,7 +86,7 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
         # For convenience I also want the height to be returned
         # Setting it to 0 for now, but in the end it shall contain the
         # optimal height value
-        height = 0
+        height = min_height
 
         solutions = [X[k][j][i] for k in range(nofrectangles) for j in range(min_height - dimensions[k][1] + 1) for i in range(width - dimensions[k][0] + 1) if m.evaluate(X[k][j][i])] #max_height--->min_height
         return height, solutions, s.statistics()
