@@ -1,0 +1,22 @@
+{
+    "Status": 2,
+    "Runtime": 0.01200103759765625,
+    "Work": 0.0006193405914149662,
+    "ObjVal": 8,
+    "ObjBound": 8,
+    "ObjBoundC": 8,
+    "MIPGap": 0,
+    "IntVio": 0,
+    "BoundVio": 0,
+    "ConstrVio": 0,
+    "IterCount": 22,
+    "BarIterCount": 0,
+    "NodeCount": 1,
+    "SolCount": 2,
+    "PoolObjBound": 8,
+    "PoolObjVal": [
+        8,
+        14
+    ],
+    "status": "2"
+}
