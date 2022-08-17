@@ -17,28 +17,27 @@ int: max_height = sum(col(circuits, 1));
 int: min_height = max([sum(areas) div width, max(col(circuits, 1))]);
 
 var min_height..max_height: height;
-array[1..n, 0..1] of var 0..max(
-  [max_height - min(col(circuits, 1)),
-   width - min(col(circuits, 0))]): positions;
+array[1..n] of var 0..(width - min(col(circuits, 0))): positions_x;
+array[1..n] of var 0..(max_height - min(col(circuits, 1))): positions_y;
 
 % Constrain overlapping rectangles
 constraint diffn(
-  col(positions, 0),
-  col(positions, 1),
+  positions_x,
+  positions_y,
   col(circuits, 0),
   col(circuits, 1));
 
 % Constrain domain
-constraint max([positions[i, 0] + circuits[i, 0]| i in 1..n]) <= width;
-constraint height = max([positions[i, 1] + circuits[i, 1]| i in 1..n]);
+constraint max([positions_x[i] + circuits[i, 0]| i in 1..n]) <= width;
+constraint height = max([positions_y[i] + circuits[i, 1]| i in 1..n]);
 
 % Redundant constraints
 % The task implicitly solves a scheduling task with limited resources
 % on both axes.
 constraint redundant_constraint(cumulative(
-  col(positions, 0), col(circuits, 0), col(circuits, 1), height));
+  positions_x, col(circuits, 0), col(circuits, 1), height));
 constraint redundant_constraint(cumulative(
-  col(positions, 1), col(circuits, 1), col(circuits, 0), width));
+  positions_y, col(circuits, 1), col(circuits, 0), width));
 
 % Symmetry breaking constraints
 /*
@@ -47,21 +46,21 @@ so that circuit_new_x = width - circuit_x - circuit_width.
 By imposing lexicographic ordering we avoid the existence of such a solution.
 */
 constraint symmetry_breaking_constraint(lex_lesseq(
-  col(positions, 0),
-  [width - positions[i, 0] - circuits[i, 0]| i in 1..n]));
+  positions_x,
+  [width - positions_x[i] - circuits[i, 0]| i in 1..n]));
 
-% Vertical symmetry can be broken similarly. Currently disabled since I suspect
-% soem interference with the horizontal one.
+% Vertical symmetry can be broken similarly.
 constraint symmetry_breaking_constraint(lex_lesseq(
-  col(positions, 1),
-  [height - positions[i, 1] - circuits[i, 1]| i in 1..n]));
+  positions_y,
+  [height - positions_y[i] - circuits[i, 1]| i in 1..n]));
 
 % Break symmetry with identical chips
 % However, these instances (without rotation) do not present identical chips
 constraint symmetry_breaking_constraint(
   forall (i in 1..n, j in 1..n where i < j) (
     if circuits[i, 0] == circuits[j, 0] /\ circuits[i, 1] == circuits[j, 1] then
-      lex_lesseq(row(positions, i), row(positions, j))
+      lex_lesseq([positions_x[i], positions_y[i]],
+                 [positions_x[j], positions_y[j]])
     endif
   )
 );
@@ -80,10 +79,11 @@ array[1..n] of float: weighted_areas = [
   | i in 1..n
 ];
 
-array[0..1, 1..n] of var dom_array(positions): sorted_positions_r =
+array[0..1, 1..n] of var dom_array(positions_x) union dom_array(positions_y):
+  sorted_positions_r =
   array2d(0..1, 1..n,
-    reverse(sort_by(col(positions, 0), weighted_areas))
-    ++ reverse(sort_by(col(positions, 1), weighted_areas))
+    reverse(sort_by(positions_x, weighted_areas))
+    ++ reverse(sort_by(positions_y, weighted_areas))
   );
 
 solve
@@ -97,6 +97,6 @@ solve
 output [
   "\(width) \(height)\n\(n)\n",
 ] ++ [
-  "\(circuits[i, 0]) \(circuits[i, 1]) \(positions[i, 0]) \(positions[i, 1])\n"
+  "\(circuits[i, 0]) \(circuits[i, 1]) \(positions_x[i]) \(positions_y[i])\n"
   | i in 1..n
 ];
