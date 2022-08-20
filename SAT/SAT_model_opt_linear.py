@@ -1,5 +1,6 @@
 from z3 import *
 from itertools import combinations
+import time
 
 #Generic cardinality constraints
 #IMPORTANTE: Provare altri encodings (questi sono i "sequential" encoding, O(n) clauses
@@ -22,6 +23,18 @@ def at_most_one(bool_vars, name):
 
 def exactly_one(bool_vars, name):
     return And(at_least_one(bool_vars), at_most_one(bool_vars, name))
+
+def equal_vars(var1,var2): #boolean variables are equal iff they are equivalent
+    return And(Or(Not(var1),var2),Or(Not(var2),var1))
+
+def lex_order(listvar1,listvar2):   #Ordine lessicografico "al contrario": listvar1>=listvar2 
+    constraints=[]
+    n=len(listvar1)
+    constraints.append(Implies(listvar2[0],listvar1[0])) #first element of first list is ""<="" of first element of second list
+    for i in range(1,100):     #il constraints "intero" è troppo grande, si può provare a giocare con questo range
+        #constraints.append(Or(Not(And([equal_vars(listvar1[j],listvar2[j]) for j in range(i)])), Or(listvar1[i],Not(listvar2[i]))))
+        constraints.append(Implies(And([equal_vars(listvar1[k],listvar2[k]) for k in range(i)]),Implies(listvar2[i],listvar1[i])))
+    return And(constraints)
 ####################################################################################################
 
 #flatten list:
@@ -58,8 +71,14 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
         #vincolo che esattamente una delle variabili-altezza sia T:
         #s.add(exactly_one(Height, f"height"))
 
+        starting_time=time.time()
+        print('generating solver:')
+
         for k in range(nofrectangles):  #ogni rettangolo ha esattamente un'origine
-            s.add(exactly_one(flatten(X[k]), f"origin_{k}"))
+            #s.add(exactly_one(flatten(X[k]), f"origin_{k}"))
+            s.add(at_least_one(flatten(X[k])))  #per avere meno clauses posso mettere anche che ogni rettangolo ha almeno un'origine:
+                                            #alla peggio puoi ottenere come soluzione un rettangolo con circuiti duplicati,
+                                            #e quando costruisci fisicamente il chip scegli dove piazzare i circuiti in una qualsiasi delle posizioni restituite dalla soluzione
 
         #constraints no-overlap:
         for k in range(nofrectangles):
@@ -76,23 +95,17 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
                #1) in ogni i,j ci può essere al più un'origine di un rettangolo k
                #2) per ogni rettangolo k, Se X[k][j][i], allora i + dimensions[k][0] <= width
                #3) analogo per l'altezza
-
+        end_time=time.time()
+        print('Model generated in', end_time - starting_time, 'seconds')
         check_result = s.check()
 
         # If satisfiable
         if check_result == sat:
             m = s.model()
-
-            # For convenience I also want the height to be returned
-            # Setting it to 0 for now, but in the end it shall contain the
-            # optimal height value
-            #height = min_height
-
             solutions = [X[k][j][i] for k in range(nofrectangles) for j in range(min_height - dimensions[k][1] + 1) for i in range(width - dimensions[k][0] + 1) if m.evaluate(X[k][j][i])] #max_height--->min_height
             return min_height, solutions, s.statistics()
         
         min_height += 1
-        # If unsatisfiable
     return None
 
 

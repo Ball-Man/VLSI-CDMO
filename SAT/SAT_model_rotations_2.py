@@ -3,45 +3,12 @@ from itertools import combinations
 import time
 
 #Generic cardinality constraints
-#IMPORTANTE: Provare altri encodings
-
-##def toBinary(num, length = None):
-##    num_bin = bin(num).split("b")[-1]
-##    if length:
-##        return "0"*(length - len(num_bin)) + num_bin
-##    return num_bin
+#IMPORTANTE: Provare altri encodings (questi sono i "sequential" encoding, O(n) clauses
+#Per ora sto provando a verificare la satisfiability con la min_height, idealmente Height dovrebbe essere una variabile
 
 def at_least_one(bool_vars):
     return Or(bool_vars)
 
-def at_most_one_np(bool_vars, name = ""):
-    return [Not(And(pair[0], pair[1])) for pair in combinations(bool_vars, 2)]
-
-
-#BITWISE ENCODING:
-##def at_most_one(bool_vars, name):
-##    constraints = []
-##    n = len(bool_vars)
-##    m = math.ceil(math.log2(n))
-##    r = [Bool(f"r_{name}_{i}") for i in range(m)]
-##    binaries = [toBinary(i, m) for i in range(n)]
-##    for i in range(n):
-##        for j in range(m):
-##            phi = Not(r[j])
-##            if binaries[i][j] == "1":
-##                phi = r[j]
-##            constraints.append(Or(Not(bool_vars[i]), phi))        
-##    return And(constraints)
-
-
-#HEULE ENCODING:
-##def at_most_one(bool_vars, name):
-##    if len(bool_vars) <= 4:
-##        return And(at_most_one_np(bool_vars))
-##    y = Bool(f"y_{name}")
-##    return And(And(at_most_one_np(bool_vars[:3] + [y])), And(at_most_one_he(bool_vars[3:] + [Not(y)], name+"_")))
-
-#SEQUENTIAL ENCODING:
 def at_most_one(bool_vars, name):
     constraints = []
     n = len(bool_vars)
@@ -65,7 +32,6 @@ def lex_order(listvar1,listvar2):   #Ordine lessicografico "al contrario": listv
         #constraints.append(Or(Not(And([equal_vars(listvar1[j],listvar2[j]) for j in range(i)])), Or(listvar1[i],Not(listvar2[i]))))
         constraints.append(Implies(And([equal_vars(listvar1[k],listvar2[k]) for k in range(i)]),Implies(listvar2[i],listvar1[i])))
     return And(constraints)
-        
 
 def exactly_one(bool_vars, name):
     return And(at_least_one(bool_vars), at_most_one(bool_vars, name))
@@ -82,49 +48,87 @@ def vperm(A,min_height,dimensions):
     return [[[A[k][min_height - j - dimensions[k][1]][i] for i in range(len(A[k][j]))] for j in range(len(A[k]))] for k in range(len(A))]
 ####################################################################################################
 
-
+#This has become unnecessary
+def apply_rotations(width, nofrectangles, dimensions):
+    s=Solver()
+    Rotated = [Bool(f'rotated_{k}') for k in range(nofrectangles)]
+    for k in range(nofrectangles):  #square rectangles and rectangles with height greater than the max width won't be rotated
+        if dimensions[k][0] == dimensions[k][1] or dimensions[k][1] > width:
+            s.add(Not(Rotated[k]))
+    while(True):  
+        check_result = s.check()
+        if check_result == sat:
+            m=s.model()
+            actual_dimensions=[]
+            for k in range(nofrectangles):
+                if m.evaluate(Rotated[k]) == True:
+                    actual_dimensions.append(dimensions[k][::-1])
+                else:
+                    actual_dimensions.append(dimensions[k])
+            a= sat_vlsi(width, nofrectangles, actual_dimensions)
+            if a != None:
+                return a
+            formulas=[]
+            for k in range(nofrectangles):
+                if m.evaluate(Rotated[k]) == True:
+                    formulas.append(Rotated[k])
+                else:
+                    formulas.append(Not(Rotated[k]))
+            formula = And(formulas)
+            s.add(Not(formula))
+    return "unsat"
+                
+        
 def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di coppie di coordinate [x,y]
 
     s = Solver()
-    
+
     total_area = 0
     for i in range(nofrectangles):
         total_area += dimensions[i][0] * dimensions[i][1]
     if total_area % width == 0:         #If total area is not divisible by width we round up
-        min_height = max(total_area // width, max([dimensions[i][1] for i in range(nofrectangles)]))
+        min_height = max(total_area // width, max(min(dimensions[i][0], dimensions[i][1]) for i in range(nofrectangles)))
     else:
-        min_height = max(total_area // width + 1, max([dimensions[i][1] for i in range(nofrectangles)]))
-    #max_height = sum([i[1] for i in dimensions])            #stessi bound sull'altezza del modello CP
+        min_height = max(total_area // width + 1, max(min(dimensions[i][0], dimensions[i][1]) for i in range(nofrectangles)))
 
     #Variabile booleana Height[k] uguale a 1 se e solo se l'altezza della soluzione coincide Height[min_height+k].
     #Aggiungo il vincolo che esattamente una delle variabili è T, ma è ridondante: basterebbe che al massimo una lo sia.
     #(Non so quale delle alternative sia meglio per ora).
-    #Height = [Bool(f'height_{i}') for i in range(min_height, max_height + 1)]  
+    #Height = [Bool(f'height_{i}') for i in range(min_height, max_height + 1)]
     
-    X = [[[Bool(f'x_{i}_{j}_{k}') for i in range(width - dimensions[k][0] + 1)] for j in range(min_height - dimensions[k][1] + 1)] for k in range(nofrectangles)]   #max_height--->min_height
+    #max_x_pos = [width - dimensions[k][0] for k in range(nofrectangles)]
+    
+    X = [[[Bool(f'x_{i}_{j}_{k}') for i in range(width - dimensions[k][0] + 1)] for j in range(min_height - dimensions[k][1] + 1)] for k in range(nofrectangles)]  #max_height--->min_height
+    Xr = [[[Bool(f'x_{i}_{j}_{k+nofrectangles}') for i in range(width - dimensions[k][1] + 1)] for j in range(min_height - dimensions[k][0] + 1)] for k in range(nofrectangles)]
+
+
+    Xboth=X+Xr
+    dimensionsboth = dimensions+[item[::-1] for item in dimensions] #dimensioni di tutti i rettangoli "base" e poi di tutti i rettangoli ruotati
     #Voglio che X[k][j][i] == 1 se e solo se l'origine del rettangolo k è nelle coordinate i,j
+    
 
     #vincolo che esattamente una delle variabili-altezza sia T:
     #s.add(exactly_one(Height, f"height"))
+
     starting_time=time.time()
     print('generating solver:')
     
     for k in range(nofrectangles):  #ogni rettangolo ha esattamente un'origine
         #s.add(exactly_one(flatten(X[k]), f"origin_{k}"))
-        s.add(at_least_one(flatten(X[k])))  #per avere meno clauses posso mettere anche che ogni rettangolo ha almeno un'origine:
+        s.add(at_least_one(flatten(X[k])+flatten(Xr[k])))  #per avere meno clauses posso mettere anche che ogni rettangolo ha almeno un'origine:
                                             #alla peggio puoi ottenere come soluzione un rettangolo con circuiti duplicati,
                                             #e quando costruisci fisicamente il chip scegli dove piazzare i circuiti in una qualsiasi delle posizioni restituite dalla soluzione
 
     
-    #constraints no-overlap: (1st attempt)
-    for k in range(nofrectangles):
-        for i in range(width - dimensions[k][0] + 1):
-            for j in range(min_height - dimensions[k][1] + 1): ##max_height--->min_height
-                for k1 in range(k+1, nofrectangles): #prima era range(nofrectangles), con if k != k1, ma così si tolgono un po' di implied constraints (modello è più piccolo)
-                    #if k != k1:
-                        for i1 in range(max(i-dimensions[k1][0]+1,0), min(i+dimensions[k][0], width - dimensions[k1][0] +1)):
-                            for j1 in range(max(j-dimensions[k1][1]+1,0), min(j+dimensions[k][1], min_height - dimensions[k1][1] +1)):     #si dovrebbe capire graficamente #max_height--->min_height                                                                                         
-                                s.add(Or(Not(X[k][j][i]), Not(X[k1][j1][i1])))
+    #constraints no-overlap:
+    for k in range(2*nofrectangles):
+        for i in range(width - dimensionsboth[k][0] + 1):
+            for j in range(min_height - dimensionsboth[k][1] + 1): ##max_height--->min_height
+                for k1 in range(k+1, 2*nofrectangles): #prima era range(nofrectangles), con if k != k1, ma così si tolgono un po' di implied constraints (modello è più piccolo)
+                    if k != k1 - 2*nofrectangles:
+                        for i1 in range(max(i-dimensionsboth[k1][0]+1,0), min(i+dimensionsboth[k][0], width - dimensionsboth[k1][0] +1)):
+                            for j1 in range(max(j-dimensionsboth[k1][1]+1,0), min(j+dimensionsboth[k][1], min_height - dimensionsboth[k1][1] +1)):     #si dovrebbe capire graficamente #max_height--->min_height                                                                                         
+                                s.add(Implies(Xboth[k][j][i], Not(Xboth[k1][j1][i1])))
 
     #horizontal symmetry breaking constraint:
     #s.add(lex_order(flatten(flatten(X)), flatten(flatten(hperm(X,width,dimensions)))))
@@ -134,6 +138,7 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
            #1) in ogni i,j ci può essere al più un'origine di un rettangolo k
            #2) per ogni rettangolo k, Se X[k][j][i], allora i + dimensions[k][0] <= width
            #3) analogo per l'altezza
+                                
     end_time=time.time()
     print('Model generated in', end_time - starting_time, 'seconds')
     check_result = s.check()
@@ -141,25 +146,13 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
     # If satisfiable
     if check_result == sat:
         m = s.model()
-        solutions = [X[k][j][i] for k in range(nofrectangles) for j in range(min_height - dimensions[k][1] + 1) for i in range(width - dimensions[k][0] + 1) if m.evaluate(X[k][j][i])] #max_height--->min_height
+        solutionsa = [Xboth[k][j][i] for k in range(nofrectangles) for j in range(min_height - dimensionsboth[k][1] + 1) for i in range(width - dimensionsboth[k][0] + 1) if m.evaluate(Xboth[k][j][i])] #max_height--->min_height
+        solutionsb = [Xboth[k][j][i] for k in range(nofrectangles+1, 2*nofrectangles) for j in range(min_height - dimensionsboth[k][1] + 1) for i in range(width - dimensionsboth[k][0] + 1) if m.evaluate(Xboth[k][j][i])]
+        solutions = solutionsa+solutionsb
         return min_height, solutions, s.statistics()
 
     # If unsatisfiable
-    return "unsat"
-
-##width=8
-##nofrectangles=4
-##dimensions=[[3,3],[3,5],[5,3],[5,5]]
-##min_height=8
-##X = [[[Bool(f'x_{i}_{j}_{k}') for i in range(width - dimensions[k][0] + 1)] for j in range(min_height - dimensions[k][1] + 1)] for k in range(nofrectangles)]
-
-
-        
-
-
-
-
-
+    return None
 
 
 
