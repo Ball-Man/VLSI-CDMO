@@ -40,9 +40,9 @@ def main():
         # Dump results and statistics on file
         os.makedirs(DEFAULT_OUTPUT_DIR, exist_ok=True)
         output_basename = (f'out-{pt.splitext(pt.basename(instance_file))[0]}'
-                           '.txt')
+                        '.txt')
         stats_basename = (f'stats-{pt.splitext(pt.basename(instance_file))[0]}'
-                          '.txt')
+                        '.txt')
         with open(pt.join(DEFAULT_OUTPUT_DIR, output_basename), 'w') as fout:
             fout.write(format_result(result["result"]))
 

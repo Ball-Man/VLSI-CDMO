@@ -1,4 +1,3 @@
-
 import sys
 import glob
 import json
@@ -21,16 +20,15 @@ def format_result(result):
         ret += " ".join([str(s) for s in r]) + "\n"
     return ret
 
-
 def main():
 
     # Define a new instance for each input file
-    for instance_file in glob.glob(pt.join(DEFAULT_INSTANCES_DIR, '*18*')):
+    for instance_file in glob.glob(pt.join(DEFAULT_INSTANCES_DIR, '*')):
         with open(instance_file) as fin:
             instance_data = json.load(fin)
 
         print(f'solving instance: {pt.basename(instance_file)}')
-        result = solve(**instance_data, export_file="no_rotation.mps")
+        result = solve(**instance_data)
 
         dump_statistics(result["statistics"], result["status"])
 
