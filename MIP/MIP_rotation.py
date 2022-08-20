@@ -1,31 +1,70 @@
-from pulp import LpVariable, LpProblem, LpMinimize, LpInteger, LpStatus, GUROBI, CPLEX_PY, PULP_CBC_CMD
+from pulp import LpVariable, LpProblem, LpMinimize, LpStatus, GUROBI, CPLEX_PY, PULP_CBC_CMD, LpContinuous, LpInteger 
+import pulp as pl
 import json
+from math import ceil
+
+from util import linear_max, linear_or, lex_less
+
+DEFAULT_TIME_LIMIT = 5*60
+VARIABLE_TYPE = LpInteger
 
 
-from util import linear_max, reify_or, lex_less
+def supported_solver():
+    '''Get a list with the supported pulp solver.'''
 
-def solve(width, n, circuits, solver=None, export_file=None):
-    model = LpProblem("rotation", LpMinimize)
-    min_height = sum([circuits[i][0]*circuits[i][1] for i in range(n)]) // width
-    max_height = max(max([max(circuits[i]) for i in range(n)]), sum([circuits[i][0] for i in range(n)]))
+    return pl.listSolvers(onlyAvailable=True)
+
+def solve(width, n, circuits, name="rotation", solver="PULP_CBC_CMD", export_file=None, time_limit=DEFAULT_TIME_LIMIT):
+    f'''
+    Solve VLSI problem using a MILP formulation and MILP solver. Is possible to rotate the chips.
+    width : width of the plate
+    n : number of circuits.
+    circuits : list of tuple in the form [(x1,y1), ..., (xn, yn)].
+    name : name of the model. Useful when exporting the model. Default "no_rotation".
+    solver : set the solver to use. Use supported_solver() to list the supported solvers. Default "PULP_CBC_CMD".
+    export_file : export the model into lp format. Default None
+    time_limit : time limit in which the calculation stops. Default {DEFAULT_TIME_LIMIT}.
+
+    return : dict containing: 
+        - status : string with a commend on the solution(eg. Optimal)
+        - statistics : statistics of the solving process. Contains at least "solutionTime" and "solutionCpuTime".
+        - result : dict containing:
+            - width : width of the plate.
+            - height : height of the highest chip.
+            - rect : list of tuple in the form [(w[1], h[1], x[1], y[i]), ..., (w[n], h[n], x[n], y[n])]
+    '''
+
+    model = LpProblem(name, LpMinimize)
+
+    # Min height is the lowest possible height of a rectangle that can contain the circuits or the highest chip
+    min_height = max(ceil(sum([circuits[i][0]*circuits[i][1] for i in range(n)]) / width), max([max(circuits[i]) for i in range(n)]))
+
+    # Max height is obtained by stacking all chips in one column
+    max_height = sum([max(circuits[i]) for i in range(n)])
     print(f"Best height: {min_height}")
 
-    height = LpVariable("height", 0, max_height, LpInteger)
+    # Objective variable
+    height = LpVariable("height", 0, max_height, VARIABLE_TYPE)
+
+    # Objective function
     model += height
+
     x = []
     y = []
     r = []
     for i in range(n):
-        x.append(LpVariable(f"x_{i}", 0, width - circuits[i][0], LpInteger))
-        y.append(LpVariable(f"y_{i}", 0, max_height - circuits[i][1], LpInteger))
+        x.append(LpVariable(f"x_{i}", 0, width - circuits[i][0], VARIABLE_TYPE))
+        y.append(LpVariable(f"y_{i}", 0, max_height - circuits[i][1], VARIABLE_TYPE))
         r.append(LpVariable(f"r_{i}", 0, 1))
         model += (x[i] <= width - (1-r[i])*circuits[i][0] - r[i]*circuits[i][1], f"width_{i}")
     
+    # Set height as the max y[i] + (h[i] if not rotated else w[i])
     linear_max(
         [y[i] + (1-r[i])*circuits[i][1] + r[i]*circuits[i][0] for i in range(n)],
         [(0, max_height) for _ in range(n)],
         height, model, "height")
 
+    # Lower bound of the solution
     model += (height >= min_height, "optimal_solution")
     
     # Non overlap
@@ -40,7 +79,7 @@ def solve(width, n, circuits, solver=None, export_file=None):
             # M[1] = w[i] + max(-1*0, -1*width) + max(1*0, 1*width)              ->   M[1] = w[i] + width
             # M[2] = h[j] + max(-1*0, -1*max_height) + max(1*0, 1*max_height)    ->   M[2] = h[j] + max_height
             # M[3] = h[i] + max(-1*0, -1*max_height) + max(1*0, 1*max_height)    ->   M[3] = h[i] + max_height
-            reify_or(
+            linear_or(
                 [
                     -x[i] + x[j] - r[j]*circuits[j][0] + r[j]*circuits[j][1] + circuits[j][0],
                     -x[j] + x[i] - r[i]*circuits[i][0] + r[i]*circuits[i][1] + circuits[i][0],
@@ -74,32 +113,52 @@ def solve(width, n, circuits, solver=None, export_file=None):
         if circuits[i][0] == circuits[i][1]:
             model += (r[i] <= 0, f"square_{i}")
 
-
-    if solver is None:
-        model.solverModel = {}
-        model.solve(GUROBI())
-    else:
-        model.solve(solver)
+    model.solve(pl.getSolver(solver, timeLimit=time_limit))
 
     if export_file is not None:
         model.writeLP(export_file+".lp")
         print(f"Model exported in {export_file}")
 
+    rect = _format_solution(circuits, n, x, y, r)
+        
+    return {"result": {"width": width, "height": round(height.varValue), "rect": rect},
+            "statistics": _get_solver_statistics(solver, model),
+            "status": LpStatus[model.status]}
+
+
+def _get_solver_statistics(solver, model):
+    '''
+    Get statistics from the solution. If the solver is GUROBI or CPLEX_PY it gives additional infos.
+
+    solver : name of the solver
+    model : model that already have solved the problem
+
+    return : dict containing infos.
+    '''
+    if solver == "GUROBI":
+        ret = json.loads(model.solverModel.getJSONSolution())['SolutionInfo']
+    elif solver == "CPLEX_PY":
+        ret = model.solverModel.get_stats().__dict__
+    else:
+        ret = {}
+    
+    ret["solutionTime"] = model.solutionTime
+    ret["solutionCpuTime"] = model.solutionCpuTime
+    return ret
+
+def _format_solution(circuits, n, x, y, r):
+    '''
+    Format the rectangle acording to the desired output.
+    circuits : list of tuple in the form [(x1,y1), ..., (xn, yn)].
+    n : number of circuits.
+    x : LpVariable for the x axis.
+    y : LpVariable for the y axis.
+    r : LpVariable boolean value that indicate if the chip is rotated.
+    '''
     rect = []
     for i in range(n):
         if round(r[i].varValue) == 0:
             rect.append((circuits[i][0], circuits[i][1], round(x[i].varValue), round(y[i].varValue)))
         else:
             rect.append((circuits[i][1], circuits[i][0], round(x[i].varValue), round(y[i].varValue)))
-        
-    return {"result": {"width": width, "height": round(height.varValue), "rect": rect},
-            "statistics": get_solver_statistics(model.solver, model.solverModel),
-            "status": LpStatus[model.status]}
-
-
-def get_solver_statistics(solver, solverModel):
-    if solver.__class__.__name__ == "GUROBI":
-        return json.loads(solverModel.getJSONSolution())['SolutionInfo']
-    if solver.__class__.__name__ == "CPLEX_PY":
-        return solverModel.get_stats().__dict__
-    return {}
+    return rect

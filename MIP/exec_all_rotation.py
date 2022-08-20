@@ -5,10 +5,11 @@ import json
 import os
 import os.path as pt
 
-from MIP_rotation import solve
+from MIP_rotation import solve, supported_solver
 
 DEFAULT_INSTANCES_DIR = pt.join(pt.dirname(__file__), '..', 'instances_json')
 DEFAULT_OUTPUT_DIR = pt.join(pt.dirname(__file__), 'out_rotation')
+solvers = supported_solver()
 
 def dump_statistics(statistics, status, fp=sys.stdout):
     """Dump pretty printed statistics from minizinc results.statistics."""
@@ -16,14 +17,12 @@ def dump_statistics(statistics, status, fp=sys.stdout):
     json.dump(statistics, fp, indent=4)
 
 def format_result(result):
-    print(result['rect'])
     ret = f"{result['width']} {result['height']}\n{len(result['rect'])}\n"
     for r in result["rect"]:
         ret += " ".join([str(s) for s in r]) + "\n"
     return ret
 
-
-def main():
+def main(solver=solvers[0]):
 
     # Define a new instance for each input file
     for instance_file in glob.glob(pt.join(DEFAULT_INSTANCES_DIR, '*')):
@@ -31,8 +30,7 @@ def main():
             instance_data = json.load(fin)
 
         print(f'solving instance: {pt.basename(instance_file)}')
-        print(instance_data)
-        result = solve(**instance_data)
+        result = solve(**instance_data, solver=solver)
 
         dump_statistics(result["statistics"], result["status"])
         print()
@@ -51,4 +49,11 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    print(sys.argv)
+    if len(sys.argv) > 2 or (len(sys.argv) == 2 and sys.argv[1] not in solvers):
+        print("usage: prog.py [solver_name].")
+        print("Supported solver: ", solvers)
+    elif len(sys.argv) == 2 and sys.argv[1] in solvers:
+        main(sys.argv[1])
+    else:
+        main()

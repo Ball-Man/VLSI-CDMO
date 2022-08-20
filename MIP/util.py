@@ -1,6 +1,6 @@
-from pulp import LpVariable, LpInteger
+from pulp import LpVariable, LpBinary
 
-def reify_or(arr, big_m, model, key):
+def linear_or(arr, big_m, model, key):
     '''Linearize the or.
     It require to pass the constraint in the form "a_ij*x_j - B_i <= 0"
     big_m is calculated as such: M_i = -B_i + SUM_j max(a_ij*l_j , a_ij*u_j)
@@ -15,7 +15,7 @@ def reify_or(arr, big_m, model, key):
 
     b = []
     for i in range(len(arr)):
-        b.append(LpVariable(f"{key}_b_{i}", 0, 1, LpInteger))
+        b.append(LpVariable(f"{key}_b_{i}", cat=LpBinary))
         model += (arr[i] <= big_m[i]*(1-b[i]), f"{key}_{i}")
     model += (sum(b) >= 1, f"{key}_b_sum")
 
@@ -41,7 +41,7 @@ def lex_less(arr1, arr2, dom1, dom2, model, key):
 
     # x1 != y1   ->   x1 < y1 \/ x1 > y1   ->   x1 <= y1 - 1 \/ x1 >= y1 + 1   ->   x1 - y1 + 1 <= 0 \/ -x1 + y1 +1 <= 0
     for i in range(len(arr1)):
-        reify_or(
+        linear_or(
             [ arr1[k] - arr2[k] + 1 for k in range(0,i)] +   # x_k < y_k \/
             [-arr1[k] + arr2[k] + 1 for k in range(0,i)] +   # x_k > y_k \/
             [arr1[i] - arr2[i]],                             # x_i <= y_i
@@ -63,7 +63,7 @@ def linear_max(arr, dom, y, model, key):
     b = []
     u_max = max(dom[i][1] for i in range(len(arr)))
     for i in range(len(arr)):
-        b.append(LpVariable(f"{key}_b_{i}", 0, 1, LpInteger))
+        b.append(LpVariable(f"{key}_b_{i}", cat=LpBinary))
         model += (y >= arr[i], f"{key}_max1_{i}")
         model += (y <= arr[i] + (u_max - dom[i][0])*(1-b[i]), f"{key}_max2_{i}")
 
