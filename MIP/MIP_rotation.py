@@ -2,7 +2,7 @@ import gurobipy as gp
 from gurobipy import GRB
 import json
 
-from util import linear_max, reify_or, lex_less
+from gurobi_util import linear_max, reify_or, lex_less
 
 def solve(width, n, circuits):
     m = gp.Model("mip2")

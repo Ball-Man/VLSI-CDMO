@@ -1,12 +1,9 @@
-import gurobipy as gp
-from gurobipy import GRB
-import json
-
-from gurobi_util import linear_max, reify_or, lex_less
+import docplex.mp
+from docplex.mp.model import Model
 
 def solve(width, n, circuits, sort_column_row = False, export_file=None):
-    m = gp.Model("mip1")
-    m.setParam('TimeLimit', 5*60)
+    m = Model("mip1")
+    m.set_time_limit(5*60)
     min_height = sum([circuits[i][0]*circuits[i][1] for i in range(n)]) // width
     max_height = max(max([circuits[i][0] for i in range(n)]), sum([circuits[i][0] for i in range(n)]))
     
@@ -14,32 +11,23 @@ def solve(width, n, circuits, sort_column_row = False, export_file=None):
     x = []
     y = []
     for i in range(n):
-        x.append(m.addVar(vtype=GRB.INTEGER, name=f"x_{i}"))
-        y.append(m.addVar(vtype=GRB.INTEGER, name=f"y_{i}"))
-        m.addConstr(x[i] <= width - circuits[i][0], f"width_{i}")
+        x.append(m.integer_var(name=f"x_{i}"))
+        y.append(m.integer_var(name=f"y_{i}"))
+        m.add_constraint(x[i] <= width - circuits[i][0], ctname=f"width_{i}")
     
     print(f"Best height: {min_height}")
     
-    height = m.addVar(vtype=GRB.INTEGER, name="height")
+    height = m.integer_var(name="height")
     linear_max(
         [y[i] + circuits[i][1] for i in range(n)],
         [(0, max_height) for _ in range(n)],
         height, m, "height")
         
-    m.addConstr(height >= min_height, name="optimal_solution")
+    m.add_constraint(height >= min_height, ctname="optimal_solution")
     
     # Non overlap
     for i in range(n):
         for j in range(i+1,n):
-            # x[i] >= x[j] + w[j]   ->   -x[i] + x[j] + w[j] <= 0
-            # x[j] >= x[i] + w[i]   ->   -x[j] + x[i] + w[i] <= 0
-            # y[i] >= y[j] + h[j]   ->   -y[i] + y[j] + h[j] <= 0
-            # y[j] >= y[i] + h[i]   ->   -y[j] + y[i] + h[i] <= 0
-
-            # M[0] = w[j] + max(-1*0, -1*width) + max(1*0, 1*width)              -> M[0] = w[j] + width
-            # M[1] = w[i] + max(-1*0, -1*width) + max(1*0, 1*width)              -> M[1] = w[i] + width
-            # M[2] = h[j] + max(-1*0, -1*max_height) + max(1*0, 1*max_height)    -> M[2] = h[j] + max_height
-            # M[3] = h[i] + max(-1*0, -1*max_height) + max(1*0, 1*max_height)    -> M[3] = h[i] + max_height
             reify_or(
                 [
                     -x[i] + x[j] + circuits[j][0],
@@ -52,7 +40,7 @@ def solve(width, n, circuits, sort_column_row = False, export_file=None):
                     circuits[i][0] + width,
                     circuits[j][1] + max_height,
                     circuits[i][1] + max_height
-                ], m, "diffn")
+                ], m, f"diffn_{i}_{j}_")
 
 
 
@@ -120,19 +108,47 @@ def solve(width, n, circuits, sort_column_row = False, export_file=None):
                             1 + width                               # 1 + max(1*0, 1*width) + max(-1*0, -1*width)
                         ], m, f"same_column_{h}_{k}"
                     )
-    
-    m.setObjective(height, GRB.MINIMIZE)
-    m.optimize()
 
+    
+    
+    m.minimize(height)
+    sol = m.solve()
+    print(m.solve_details)
     if export_file is not None:
         m.write(export_file)
         print(f"Model exported in {export_file}")
+
+    rect = [(circuits[i][0], circuits[i][1], round(sol.get_value(x[i])), round(sol.get_value(y[i]))) for i in range(n)]
+    return {"result": {"width": width, "height": round(sol.get_value(height)), "rect": rect},
+            "statistics": m.get_statistics().__dict__,
+            "status": m.solve_details.status}
+
+
+
+def reify_or(arr, big_m, model, key):
+    b = []
+    for i in range(len(arr)):
+        b.append(model.binary_var(name=f"{key}_b_{i}"))
+        model.add_constraint(arr[i] <= big_m[i]*(1-b[i]), ctname=f"{key}_{i}")
+    model.add_constraint(sum(b) >= 1, ctname=f"{key}_b_sum")
+
+def lex_less(arr1, arr2, dom1, dom2, model, key):
+    for i in range(len(arr1)):
+        reify_or(
+            [ arr1[k] - arr2[k] + 1 for k in range(0,i)] +   # x_k < y_k \/
+            [-arr1[k] + arr2[k] + 1 for k in range(0,i)] +   # x_k > y_k \/
+            [arr1[i] - arr2[i]],                            # x_i <= y_i
+            [1 + dom1[k][1] - dom2[k][0] for k in range(0,i)] + #  B = -1, Mk = 1 + max(dom1[k]) + max(-1*dom2[k][0], -1*dom2[k][1])   ->   1 + dom1[k][1] - dom2[k][0]
+            [1 - dom1[k][0] + dom2[k][1] for k in range(0,i)] + #  B = -1, Mk = 1 + max(-1*dom1[k][0], -1*dom1[k][1]) + max(dom2[k])   ->   1 - dom1[k][0] + dom2[k][1]
+            [dom1[i][1]], model, f"{key}_{i}")
     
-    result = json.loads(m.getJSONSolution())
+def linear_max(arr, dom, y, model, key):
+    b = []
+    u_max = max(dom[i][1] for i in range(len(arr)))
+    for i in range(len(arr)):
+        b.append(model.binary_var(name=f"{key}_b_{i}"))
+        model.add_constraint(y >= arr[i], ctname=f"{key}_max1_{i}")
+        model.add_constraint(y <= arr[i] + (u_max - dom[i][0])*(1-b[i]), ctname=f"{key}_max2_{i}")
 
-    rect = [(circuits[i][0], circuits[i][1], round(x[i].X), round(y[i].X)) for i in range(n)]
-    return {"result": {"width": width, "height": round(height.X), "rect": rect},
-            "statistics": result['SolutionInfo'],
-            "status": result['SolutionInfo']["Status"]}
-
-
+    model.add_constraint(sum(b) == 1, ctname=f"{key}_sum_b")
+    return y

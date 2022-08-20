@@ -44,7 +44,7 @@ def lex_less(arr1, arr2, dom1, dom2, model, key):
         reify_or(
             [ arr1[k] - arr2[k] + 1 for k in range(0,i)] +   # x_k < y_k \/
             [-arr1[k] + arr2[k] + 1 for k in range(0,i)] +   # x_k > y_k \/
-            [arr1[i] - arr2[i]],                            # x_i <= y_i
+            [arr1[i] - arr2[i]],                             # x_i <= y_i
             [1 + dom1[k][1] - dom2[k][0] for k in range(0,i)] + #  B = -1, Mk = 1 + max(dom1[k]) + max(-1*dom2[k][0], -1*dom2[k][1])   ->   1 + dom1[k][1] - dom2[k][0]
             [1 - dom1[k][0] + dom2[k][1] for k in range(0,i)] + #  B = -1, Mk = 1 + max(-1*dom1[k][0], -1*dom1[k][1]) + max(dom2[k])   ->   1 - dom1[k][0] + dom2[k][1]
             [dom1[i][1]], model, f"{key}_{i}")

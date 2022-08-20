@@ -1,14 +1,13 @@
-
 import sys
 import glob
 import json
 import os
 import os.path as pt
 
-from MIP_no_rotation import solve
+from MIP_no_rotation_pulp import solve
 
 DEFAULT_INSTANCES_DIR = pt.join(pt.dirname(__file__), '..', 'instances_json')
-DEFAULT_OUTPUT_DIR = pt.join(pt.dirname(__file__), 'out_no_rotation')
+DEFAULT_OUTPUT_DIR = pt.join(pt.dirname(__file__), 'out_no_rotation_pulp')
 
 def dump_statistics(statistics, status, fp=sys.stdout):
     """Dump pretty printed statistics from minizinc results.statistics."""
@@ -21,16 +20,15 @@ def format_result(result):
         ret += " ".join([str(s) for s in r]) + "\n"
     return ret
 
-
 def main():
 
     # Define a new instance for each input file
-    for instance_file in glob.glob(pt.join(DEFAULT_INSTANCES_DIR, '*18*')):
+    for instance_file in glob.glob(pt.join(DEFAULT_INSTANCES_DIR, '*01*')):
         with open(instance_file) as fin:
             instance_data = json.load(fin)
 
         print(f'solving instance: {pt.basename(instance_file)}')
-        result = solve(**instance_data, export_file="no_rotation.mps")
+        result = solve(**instance_data, export_file="no_rotation_pulp.mps")
 
         dump_statistics(result["statistics"], result["status"])
 
