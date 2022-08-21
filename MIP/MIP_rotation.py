@@ -56,11 +56,11 @@ def solve(width, n, circuits, name="rotation", solver="PULP_CBC_CMD", export_fil
         x.append(LpVariable(f"x_{i}", 0, width - circuits[i][0], VARIABLE_TYPE))
         y.append(LpVariable(f"y_{i}", 0, max_height - circuits[i][1], VARIABLE_TYPE))
         r.append(LpVariable(f"r_{i}", 0, 1))
-        model += (x[i] <= width - (1-r[i])*circuits[i][0] - r[i]*circuits[i][1], f"width_{i}")
+        model += (x[i] - r[i]*circuits[i][0] + r[i]*circuits[i][1] <= width - circuits[i][0], f"width_{i}")
     
     # Set height as the max y[i] + (h[i] if not rotated else w[i])
     linear_max(
-        [y[i] + (1-r[i])*circuits[i][1] + r[i]*circuits[i][0] for i in range(n)],
+        [y[i] - r[i]*circuits[i][1] + r[i]*circuits[i][0] + circuits[i][1] for i in range(n)],
         [(0, max_height) for _ in range(n)],
         height, model, "height")
 
@@ -97,10 +97,12 @@ def solve(width, n, circuits, name="rotation", solver="PULP_CBC_CMD", export_fil
 
     # Symmetry breaking
     # Horizontal
-    lex_less(x, [width - x[i] - (1-r[i])*circuits[i][0] - r[i]*circuits[i][1] for i in range(0,n)], [(0, width) for _ in range(0,n)], [(0, width) for _ in range(0,n)], model, "horizontal_symmetry")
+    # width - x[i] - (1-r[i])*w[i] - r[i]*h[i]  -> - x[i] + r[i]*w[i] - r[i]*h[i] + width - w[i]
+    lex_less(x, [-x[i] + r[i]*circuits[i][0] - r[i]*circuits[i][1] + width - circuits[i][0] for i in range(0,n)], [(0, width) for _ in range(0,n)], [(0, width) for _ in range(0,n)], model, "horizontal_symmetry")
 
     # Vertical
-    lex_less(y, [height - y[i] - (1-r[i])*circuits[i][1] - r[i]*circuits[i][0] for i in range(0,n)], [(0, max_height) for _ in range(0,n)], [(0, max_height) for _ in range(0,n)], model, "vertical_symmetry")
+    # height - y[i] - (1-r[i])*h[i] - r[i]*w[i]  -> - y[i] + r[i]*h[i] - r[i]*w[i] + height - h[i]
+    lex_less(y, [-y[i] + r[i]*circuits[i][1] - r[i]*circuits[i][0] + height - circuits[i][1] for i in range(0,n)], [(0, max_height) for _ in range(0,n)], [(0, max_height) for _ in range(0,n)], model, "vertical_symmetry")
     
     # Equal circuits
     for i in range(n):
