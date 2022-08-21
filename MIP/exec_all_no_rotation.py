@@ -47,7 +47,7 @@ def main(solver=solvers[0]):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) > 2 or (len(sys.argv) == 2 and sys.argv[1] in solvers):
+    if len(sys.argv) > 2 or (len(sys.argv) == 2 and sys.argv[1] not in solvers):
         print("usage: prog.py [solver_name].")
         print("Supported solver: ", solvers)
     elif len(sys.argv) == 2 and sys.argv[1] in solvers:

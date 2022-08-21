@@ -44,7 +44,7 @@ def solve(width, n, circuits, name="rotation", solver="PULP_CBC_CMD", export_fil
     print(f"Best height: {min_height}")
 
     # Objective variable
-    height = LpVariable("height", 0, max_height, VARIABLE_TYPE)
+    height = LpVariable("height", min_height, max_height, VARIABLE_TYPE)
 
     # Objective function
     model += height

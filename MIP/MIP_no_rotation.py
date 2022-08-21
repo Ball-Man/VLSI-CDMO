@@ -39,11 +39,10 @@ def solve(width, n, circuits, name="no_rotation", solver="PULP_CBC_CMD", sort_co
 
     # Max height is obtained by stacking all chips in one column
     max_height = sum([circuits[i][0] for i in range(n)])
-
     print(f"Best height: {min_height}")
 
     # Objective variable
-    height = LpVariable("height", 0, max_height, VARIABLE_TYPE)
+    height = LpVariable("height", min_height, max_height, VARIABLE_TYPE)
 
     # Objective function. Must be the first contraint.
     model += height
