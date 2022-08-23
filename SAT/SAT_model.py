@@ -45,7 +45,7 @@ def at_most_one_np(bool_vars, name = ""):
 def at_most_one(bool_vars, name):
     constraints = []
     n = len(bool_vars)
-    s = [Bool(f"s_{name}_{i}") for i in range(n - 1)]
+    s = [Bool(f's_{name}_{i}') for i in range(n - 1)]
     constraints.append(Or(Not(bool_vars[0]), s[0]))
     constraints.append(Or(Not(bool_vars[n-1]), Not(s[n-2])))
     for i in range(1, n - 1):
@@ -57,13 +57,26 @@ def at_most_one(bool_vars, name):
 def equal_vars(var1,var2): #boolean variables are equal iff they are equivalent
     return And(Or(Not(var1),var2),Or(Not(var2),var1))
 
-def lex_order(listvar1,listvar2):   #Ordine lessicografico "al contrario": listvar1>=listvar2 
+##def lex_order(listvar1,listvar2):   #ORDINE LESSICOGRAFICO (NAIVE ENCODING)
+##    constraints=[]
+##    n=len(listvar1)
+##    constraints.append(Or(Not(listvar1[0]),listvar2[0])) #first element of first list is ""<="" of first element of second list
+##    for i in range(1,n):     #il constraints "intero" è troppo grande, si può provare a giocare con questo range
+##        #constraints.append(Or(Not(And([equal_vars(listvar1[j],listvar2[j]) for j in range(i)])), Or(listvar1[i],Not(listvar2[i]))))
+##        #constraints.append(Implies(And([equal_vars(listvar1[k],listvar2[k]) for k in range(i)]),Implies(listvar1[i],listvar2[i])))
+##        constraints.append(Or(Not(And([equal_vars(listvar1[k],listvar2[k]) for k in range(i)])),Or(Not(listvar1[i]),listvar2[i])))
+##    return And(constraints)
+
+def lex_order(listvar1,listvar2,name):  #lex_order_CSE
     constraints=[]
-    n=len(listvar1)
-    constraints.append(Implies(listvar2[0],listvar1[0])) #first element of first list is ""<="" of first element of second list
-    for i in range(1,100):     #il constraints "intero" è troppo grande, si può provare a giocare con questo range
-        #constraints.append(Or(Not(And([equal_vars(listvar1[j],listvar2[j]) for j in range(i)])), Or(listvar1[i],Not(listvar2[i]))))
-        constraints.append(Implies(And([equal_vars(listvar1[k],listvar2[k]) for k in range(i)]),Implies(listvar2[i],listvar1[i])))
+    n = len(listvar1)           #Anche qui si può provare a prendere f(n)<n per alleggerire il numero di constraints
+    s = [Bool(f's_{name}_{i}') for i in range(n-1)]
+    constraints.append(Or(Not(listvar1[0]),listvar2[0]))
+    constraints.append(equal_vars(s[0],equal_vars(listvar1[0],listvar2[0])))
+    for i in range(n-2):
+        constraints.append(equal_vars(s[i+1], And(s[i], equal_vars(listvar1[i+1],listvar2[i+1]))))
+    for i in range(n-1):
+        constraints.append(Or(Not(s[i]),(Or(Not(listvar1[i+1]),listvar2[i+1]))))
     return And(constraints)
         
 
@@ -94,18 +107,10 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
         min_height = max(total_area // width, max([dimensions[i][1] for i in range(nofrectangles)]))
     else:
         min_height = max(total_area // width + 1, max([dimensions[i][1] for i in range(nofrectangles)]))
-    #max_height = sum([i[1] for i in dimensions])            #stessi bound sull'altezza del modello CP
-
-    #Variabile booleana Height[k] uguale a 1 se e solo se l'altezza della soluzione coincide Height[min_height+k].
-    #Aggiungo il vincolo che esattamente una delle variabili è T, ma è ridondante: basterebbe che al massimo una lo sia.
-    #(Non so quale delle alternative sia meglio per ora).
-    #Height = [Bool(f'height_{i}') for i in range(min_height, max_height + 1)]  
     
-    X = [[[Bool(f'x_{i}_{j}_{k}') for i in range(width - dimensions[k][0] + 1)] for j in range(min_height - dimensions[k][1] + 1)] for k in range(nofrectangles)]   #max_height--->min_height
+    X = [[[Bool(f'x_{i}_{j}_{k}') for i in range(width - dimensions[k][0] + 1)] for j in range(min_height - dimensions[k][1] + 1)] for k in range(nofrectangles)]
     #Voglio che X[k][j][i] == 1 se e solo se l'origine del rettangolo k è nelle coordinate i,j
 
-    #vincolo che esattamente una delle variabili-altezza sia T:
-    #s.add(exactly_one(Height, f"height"))
     starting_time=time.time()
     print('generating solver:')
     
@@ -116,19 +121,21 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
                                             #e quando costruisci fisicamente il chip scegli dove piazzare i circuiti in una qualsiasi delle posizioni restituite dalla soluzione
 
     
-    #constraints no-overlap: (1st attempt)
+    #constraints no-overlap:
     for k in range(nofrectangles):
         for i in range(width - dimensions[k][0] + 1):
-            for j in range(min_height - dimensions[k][1] + 1): ##max_height--->min_height
+            for j in range(min_height - dimensions[k][1] + 1): 
                 for k1 in range(k+1, nofrectangles): #prima era range(nofrectangles), con if k != k1, ma così si tolgono un po' di implied constraints (modello è più piccolo)
                     #if k != k1:
                         for i1 in range(max(i-dimensions[k1][0]+1,0), min(i+dimensions[k][0], width - dimensions[k1][0] +1)):
-                            for j1 in range(max(j-dimensions[k1][1]+1,0), min(j+dimensions[k][1], min_height - dimensions[k1][1] +1)):     #si dovrebbe capire graficamente #max_height--->min_height                                                                                         
+                            for j1 in range(max(j-dimensions[k1][1]+1,0), min(j+dimensions[k][1], min_height - dimensions[k1][1] +1)):     #si dovrebbe capire graficamente                                                                                       
                                 s.add(Or(Not(X[k][j][i]), Not(X[k1][j1][i1])))
 
-    #horizontal symmetry breaking constraint:
-    #s.add(lex_order(flatten(flatten(X)), flatten(flatten(hperm(X,width,dimensions)))))
-    #s.add(lex_order(flatten(flatten(X)), flatten(flatten(vperm(X,min_height,dimensions)))))
+    #horizontal and vertical symmetry breaking constraint:
+##    s.add(lex_order(flatten(flatten(X)), flatten(flatten(hperm(X,width,dimensions)))))
+##    s.add(lex_order(flatten(flatten(X)), flatten(flatten(vperm(X,min_height,dimensions)))))
+    s.add(lex_order(flatten(flatten(X)), flatten(flatten(hperm(X,width,dimensions))),'hsym'))
+    s.add(lex_order(flatten(flatten(X)), flatten(flatten(vperm(X,min_height,dimensions))),'vsym'))
 
     #possibili implied constraints:
            #1) in ogni i,j ci può essere al più un'origine di un rettangolo k
@@ -136,6 +143,10 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
            #3) analogo per l'altezza
     end_time=time.time()
     print('Model generated in', end_time - starting_time, 'seconds')
+
+    #TIMEOUT:
+    s.set('timeout', 300000)
+
     check_result = s.check()
 
     # If satisfiable
@@ -145,8 +156,9 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
         return min_height, solutions, s.statistics()
 
     # If unsatisfiable
-    return "unsat"
+    return None
 
+#FOR TESTING PURPOSE:
 ##width=8
 ##nofrectangles=4
 ##dimensions=[[3,3],[3,5],[5,3],[5,5]]

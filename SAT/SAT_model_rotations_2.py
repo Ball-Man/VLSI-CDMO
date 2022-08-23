@@ -24,13 +24,14 @@ def at_most_one(bool_vars, name):
 def equal_vars(var1,var2): #boolean variables are equal iff they are equivalent
     return And(Or(Not(var1),var2),Or(Not(var2),var1))
 
-def lex_order(listvar1,listvar2):   #Ordine lessicografico "al contrario": listvar1>=listvar2 
+def lex_order(listvar1,listvar2):   #Ordine lessicografico: listvar1<=listvar2 
     constraints=[]
     n=len(listvar1)
-    constraints.append(Implies(listvar2[0],listvar1[0])) #first element of first list is ""<="" of first element of second list
-    for i in range(1,100):     #il constraints "intero" è troppo grande, si può provare a giocare con questo range
+    constraints.append(Or(Not(listvar1[0]),listvar2[0])) #first element of first list is ""<="" of first element of second list
+    for i in range(1,10):     #il constraints "intero" è troppo grande, si può provare a giocare con questo range
         #constraints.append(Or(Not(And([equal_vars(listvar1[j],listvar2[j]) for j in range(i)])), Or(listvar1[i],Not(listvar2[i]))))
-        constraints.append(Implies(And([equal_vars(listvar1[k],listvar2[k]) for k in range(i)]),Implies(listvar2[i],listvar1[i])))
+        #constraints.append(Implies(And([equal_vars(listvar1[k],listvar2[k]) for k in range(i)]),Implies(listvar1[i],listvar2[i])))
+        constraints.append(Or(Not(And([equal_vars(listvar1[k],listvar2[k]) for k in range(i)])),Or(Not(listvar1[i]),listvar2[i])))
     return And(constraints)
 
 def exactly_one(bool_vars, name):
@@ -100,15 +101,17 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
     
     X = [[[Bool(f'x_{i}_{j}_{k}') for i in range(width - dimensions[k][0] + 1)] for j in range(min_height - dimensions[k][1] + 1)] for k in range(nofrectangles)]  #max_height--->min_height
     Xr = [[[Bool(f'x_{i}_{j}_{k+nofrectangles}') for i in range(width - dimensions[k][1] + 1)] for j in range(min_height - dimensions[k][0] + 1)] for k in range(nofrectangles)]
+    R=[Bool(f'Rotated_{k}') for k in range(nofrectangles)] #Per ofni rettangolo k, R[k] è True se e solo se k è ruotato
+
+    for k in range(nofrectangles):  #se il rettangolo è un quadrato non lo faccio ruotare
+        if dimensions[k][0] == dimensions[k][1]:
+            s.add(Not(R[k]))
+    
 
 
     Xboth=X+Xr
     dimensionsboth = dimensions+[item[::-1] for item in dimensions] #dimensioni di tutti i rettangoli "base" e poi di tutti i rettangoli ruotati
     #Voglio che X[k][j][i] == 1 se e solo se l'origine del rettangolo k è nelle coordinate i,j
-    
-
-    #vincolo che esattamente una delle variabili-altezza sia T:
-    #s.add(exactly_one(Height, f"height"))
 
     starting_time=time.time()
     print('generating solver:')
@@ -118,6 +121,19 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
         s.add(at_least_one(flatten(X[k])+flatten(Xr[k])))  #per avere meno clauses posso mettere anche che ogni rettangolo ha almeno un'origine:
                                             #alla peggio puoi ottenere come soluzione un rettangolo con circuiti duplicati,
                                             #e quando costruisci fisicamente il chip scegli dove piazzare i circuiti in una qualsiasi delle posizioni restituite dalla soluzione
+    for k in range(nofrectangles):
+            for j in range(min_height-dimensions[k][1] +1):
+                for i in range(width - dimensions[k][0] +1):
+                    s.add(Or((Not(R[k]),Not(X[k][j][i]))))  #R[k] implica che il rettangolo k (non ruotato) non abbia un'origine
+
+    for k in range(nofrectangles):
+            for j in range(min_height-dimensions[k][0]+1):
+                for i in range(width-dimensions[k][1]+1):
+                    s.add(Or(R[k],Not(Xr[k][j][i])))        #Non R[k] implica che il rettangolo k (ruotato) non abbia un'origine
+
+        
+                                        
+            
 
     
     #constraints no-overlap:
@@ -130,9 +146,9 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
                             for j1 in range(max(j-dimensionsboth[k1][1]+1,0), min(j+dimensionsboth[k][1], min_height - dimensionsboth[k1][1] +1)):     #si dovrebbe capire graficamente #max_height--->min_height                                                                                         
                                 s.add(Implies(Xboth[k][j][i], Not(Xboth[k1][j1][i1])))
 
-    #horizontal symmetry breaking constraint:
-    #s.add(lex_order(flatten(flatten(X)), flatten(flatten(hperm(X,width,dimensions)))))
-    #s.add(lex_order(flatten(flatten(X)), flatten(flatten(vperm(X,min_height,dimensions)))))
+    #SYMMETRY-BREAKING CONSTRAINTS:
+    #s.add(lex_order(flatten(flatten(Xboth)), flatten(flatten(hperm(Xboth,width,dimensionsboth)))))      #horizontal symmetry
+    #s.add(lex_order(flatten(flatten(Xboth)), flatten(flatten(vperm(Xboth,min_height,dimensionsboth))))) #vertical symmetry
 
     #possibili implied constraints:
            #1) in ogni i,j ci può essere al più un'origine di un rettangolo k

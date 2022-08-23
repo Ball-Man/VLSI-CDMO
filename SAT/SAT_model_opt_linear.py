@@ -27,13 +27,14 @@ def exactly_one(bool_vars, name):
 def equal_vars(var1,var2): #boolean variables are equal iff they are equivalent
     return And(Or(Not(var1),var2),Or(Not(var2),var1))
 
-def lex_order(listvar1,listvar2):   #Ordine lessicografico "al contrario": listvar1>=listvar2 
+def lex_order(listvar1,listvar2):   #Ordine lessicografico: listvar1<=listvar2 
     constraints=[]
     n=len(listvar1)
-    constraints.append(Implies(listvar2[0],listvar1[0])) #first element of first list is ""<="" of first element of second list
-    for i in range(1,100):     #il constraints "intero" è troppo grande, si può provare a giocare con questo range
+    constraints.append(Or(Not(listvar1[0]),listvar2[0])) #first element of first list is ""<="" of first element of second list
+    for i in range(1,n):     #il constraints "intero" è troppo grande, si può provare a giocare con questo range
         #constraints.append(Or(Not(And([equal_vars(listvar1[j],listvar2[j]) for j in range(i)])), Or(listvar1[i],Not(listvar2[i]))))
-        constraints.append(Implies(And([equal_vars(listvar1[k],listvar2[k]) for k in range(i)]),Implies(listvar2[i],listvar1[i])))
+        #constraints.append(Implies(And([equal_vars(listvar1[k],listvar2[k]) for k in range(i)]),Implies(listvar1[i],listvar2[i])))
+        constraints.append(Or(Not(And([equal_vars(listvar1[k],listvar2[k]) for k in range(i)])),Or(Not(listvar1[i]),listvar2[i])))
     return And(constraints)
 ####################################################################################################
 
@@ -58,8 +59,6 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
     else:
         min_height = max(total_area // width + 1, max([dimensions[i][1] for i in range(nofrectangles)]))
     
-
-
 
     while True: #Linear search: parto dal lower bound teorico e vado a salire
     
