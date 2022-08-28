@@ -12,7 +12,8 @@ import os.path as pt
 import argparse
 
 
-from SAT_model import *
+from SAT_model import sat_vlsi
+from SAT_model_rotations import sat_vlsi as sat_vlsi_rot
 
 
 # Path to json input instances, converted using convert_instances.py
@@ -38,15 +39,16 @@ def dump_statistics(statistics, fp=sys.stdout):
     json.dump(statistics_dict, fp, indent=4)
 
 
-def main(rotation: bool = False):
+def main(solve_func):
     # Solve SAT problem for each instance
-    for instance_file in glob.glob(pt.join(DEFAULT_INSTANCES_DIR, '*')):
+    for instance_file in sorted(
+            glob.glob(pt.join(DEFAULT_INSTANCES_DIR, '*'))):
         with open(instance_file) as fin:
             instance_data = json.load(fin)
 
         print(f'solving instance: {pt.basename(instance_file)}')
-        model_results = sat_vlsi(instance_data['width'], instance_data['n'],
-                                 instance_data['circuits'])
+        model_results = solve_func(instance_data['width'], instance_data['n'],
+                                   instance_data['circuits'])
 
         # If unsolvable (it should never happen with our instances)
         if model_results is None:
@@ -60,9 +62,17 @@ def main(rotation: bool = False):
             match = SAT_INSTANCE_DECODER_RE.match(var)
             x, y, k = map(int, match.groups())
 
+            # Normalize k (from index k to 2k - 1 it's the kth
+            # rectangle, rotated)
+            if k >= instance_data['n']:
+                k -= instance_data['n']
+
+            w, h = instance_data['circuits'][k]
+            if k >= instance_data['n']:
+                w, h = h, w
+
             # Update instance data with results
-            instance_data['circuits'][k] = (instance_data['circuits'][k]
-                                            + [x, y])
+            instance_data['circuits'][k] = (w, h, x, y)
 
         # Output results and statistics
         dump_result(instance_data, height)
@@ -90,6 +100,8 @@ if __name__ == '__main__':
                         help='if specified, the rotation aware model will be '
                              'used')
     args = parser.parse_args()
-    # Imposing rotations currently have no effect, but can be used
-    # later on to determine which model to use
-    main(args.rotation)
+
+    solve_func = sat_vlsi
+    if args.rotation:
+        solve_func = sat_vlsi_rot
+    main(solve_func)

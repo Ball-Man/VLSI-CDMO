@@ -169,6 +169,7 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
     if check_result == sat:
         m = s.model()
         solutions = [X[k][j][i] for k in range(nofrectangles) for j in range(min_height - dimensions[k][1] + 1) for i in range(width - dimensions[k][0] + 1) if m.evaluate(X[k][j][i])] #max_height--->min_height
+        print(solutions)
         return min_height, solutions, s.statistics()
 
     # If unsatisfiable
