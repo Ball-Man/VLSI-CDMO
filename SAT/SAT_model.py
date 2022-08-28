@@ -1,6 +1,7 @@
 from z3 import *
 from itertools import combinations
 import time
+from math import sqrt
 
 #Generic cardinality constraints
 #IMPORTANTE: Provare altri encodings
@@ -43,6 +44,8 @@ def at_most_one_np(bool_vars, name = ""):
 
 #SEQUENTIAL ENCODING:
 def at_most_one(bool_vars, name):
+    if len(bool_vars)==1:
+        return True
     constraints = []
     n = len(bool_vars)
     s = [Bool(f's_{name}_{i}') for i in range(n - 1)]
@@ -67,16 +70,20 @@ def equal_vars(var1,var2): #boolean variables are equal iff they are equivalent
 ##        constraints.append(Or(Not(And([equal_vars(listvar1[k],listvar2[k]) for k in range(i)])),Or(Not(listvar1[i]),listvar2[i])))
 ##    return And(constraints)
 
-def lex_order(listvar1,listvar2,name):  #lex_order_CSE
+def lex_order(listvar1,listvar2,name, func = sqrt):  #lex_order_CSE
     constraints=[]
     n = len(listvar1)           #Anche qui si può provare a prendere f(n)<n per alleggerire il numero di constraints
     s = [Bool(f's_{name}_{i}') for i in range(n-1)]
-    constraints.append(Or(Not(listvar1[0]),listvar2[0]))
+    constraints.append(Or(Not(listvar2[0]),listvar1[0])) #lex_geq
+    #constraints.append(Or(Not(listvar1[0]),listvar2[0]))   #lex_lesseq
     constraints.append(equal_vars(s[0],equal_vars(listvar1[0],listvar2[0])))
-    for i in range(n-2):
+    #for i in range(n-2):   #ordine lessicografico completo
+    for i in range(int(func(n)) - 2):
         constraints.append(equal_vars(s[i+1], And(s[i], equal_vars(listvar1[i+1],listvar2[i+1]))))
-    for i in range(n-1):
-        constraints.append(Or(Not(s[i]),(Or(Not(listvar1[i+1]),listvar2[i+1]))))
+    #for i in range(n-1):   #ordine lessicografico completo
+    for i in range(int(func(n)) - 1):
+        constraints.append(Or(Not(s[i]),(Or(Not(listvar2[i+1]),listvar1[i+1])))) #lex_geq
+        #constraints.append(Or(Not(s[i]),(Or(Not(listvar1[i+1]),listvar2[i+1])))) #lex_lesseq
     return And(constraints)
         
 
@@ -114,7 +121,7 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
     starting_time=time.time()
     print('generating solver:')
     
-    for k in range(nofrectangles):  #ogni rettangolo ha esattamente un'origine
+    for k in range(nofrectangles):  #ogni rettangolo ha almeno un'origine
         #s.add(exactly_one(flatten(X[k]), f"origin_{k}"))
         s.add(at_least_one(flatten(X[k])))  #per avere meno clauses posso mettere anche che ogni rettangolo ha almeno un'origine:
                                             #alla peggio puoi ottenere come soluzione un rettangolo con circuiti duplicati,
@@ -122,9 +129,18 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
 
     
     #constraints no-overlap:
-    for k in range(nofrectangles):
+##    for k in range(nofrectangles):
+##        for i in range(width - dimensions[k][0] + 1):
+##            for j in range(min_height - dimensions[k][1] + 1): 
+##                for k1 in range(k+1, nofrectangles): #prima era range(nofrectangles), con if k != k1, ma così si tolgono un po' di implied constraints (modello è più piccolo)
+##                    #if k != k1:
+##                        for i1 in range(max(i-dimensions[k1][0]+1,0), min(i+dimensions[k][0], width - dimensions[k1][0] +1)):
+##                            for j1 in range(max(j-dimensions[k1][1]+1,0), min(j+dimensions[k][1], min_height - dimensions[k1][1] +1)):     #si dovrebbe capire graficamente                                                                                       
+##                                s.add(Or(Not(X[k][j][i]), Not(X[k1][j1][i1])))
+
+    for k in range(nofrectangles-1):
         for i in range(width - dimensions[k][0] + 1):
-            for j in range(min_height - dimensions[k][1] + 1): 
+            for j in range(min_height - dimensions[k][1] + 1):
                 for k1 in range(k+1, nofrectangles): #prima era range(nofrectangles), con if k != k1, ma così si tolgono un po' di implied constraints (modello è più piccolo)
                     #if k != k1:
                         for i1 in range(max(i-dimensions[k1][0]+1,0), min(i+dimensions[k][0], width - dimensions[k1][0] +1)):

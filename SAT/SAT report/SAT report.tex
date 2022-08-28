@@ -17,18 +17,18 @@
 
 \section{SAT}
 \subsection{A simplified version of the problem}
-In order to model the problem with SAT, at first we consider a simplified version of the problem. Instead of minimizing the length of the plate with the given plate, we consider a fixed value $H$ for the height and check with SAT if it is possible to insert the given circuits (without being able to rotate them) in the plate within the fixed width $W$. In this case, we can think of the plate as a rectangle in $\mathbb{R}^2$, with vertices $A(0,0), B(W,0), C(W,H), D(0,H)$.
+In order to model the problem with SAT, at first we consider a simplified version of the problem. Instead of minimizing the length of the plate with the given width $W$, we consider a fixed value $H$ for the height and check with SAT if it is possible to insert the given circuits (without being able to rotate them) in the plate within the fixed width $W$. In this case, we can think of the plate as a rectangle in $\mathbb{R}^2$, with vertices $A(0,0), B(W,0), C(W,H), D(0,H)$.
 
 We can then introduce the atomic propositional formulas $x_{ijk}$ with the intended meaning that $x_{ijk}$ is true if and only if the bottom-left vertex of the $k$-th circuit is the point $(i,j)$.
-In general, if the number of circuits is $K$, this would require to introduce $W\cdot H\cdot K$ formulas, but in order to reduce the total number of formulas we choose, for each circuit $k$ with width $w(k)$ and height $h(k)$, to restrict $i$ and $j$ respectively to the sets $I_k=\left\{0, \dots, W-w(k)\right\}$ and $J_k=\left\{0, \dots, H-h(k)\right\}$. As a consequence the total number of atomic formulas to use becomes $$\sum_{k=1}^K \left(W-w(k)+1\right) \left(H-h(k)+1\right) < WHK$$.
+In general, if the number of circuits is $K$, this would require to introduce $W\cdot H\cdot K$ formulas, but in order to reduce the total number of atoms, for each circuit $k$ with width $w(k)$ and height $h(k)$, we restrict $i$ and $j$ respectively to the sets $I_k=\left\{0, \dots, W-w(k)\right\}$ and $J_k=\left\{0, \dots, H-h(k)\right\}$. As a consequence the total number of atomic formulas to use becomes \begin{equation*}\sum_{k=1}^K \left(W-w(k)+1\right) \left(H-h(k)+1\right) \leq WHK,\end{equation*} with the equality holding only when $\forall k\in \left\{1,\dots,K\right\}, w(k) = h(k) = 1$.
 
 \subsubsection{Fundamental constraints}
-We need to model the constraints of the problem by means of several propositional formulas. A solution (if any) of the simplified problem will then be represented by an assignment of truth values to each $x_{ijk}$ which satisifies all of the formulas that model the constraints at the same time. 
+We need to model the constraints of the problem by means of several propositional formulas. A solution (if any) of the simplified problem will then be represented by an assignment of truth values to each $x_{ijk}$ which satisfies all of the formulas that model the constraints at the same time. 
 
 Our definitions of the atomic formulas $x_{ijk}$ already guarantee that every circuit will be positioned within the bounds of the outer rectangle $ABCD$. In order to guarantee the correctness of the solution we then need to define two fundamental constraints: the first one is that every rectangle must have exactly one bottom-left vertex, and the second one is that any two different circuits must not overlap. 
 \begin{itemize}
 	\item \emph{Existence and uniqueness of the bottom-left vertex location:} for every circuit $k=1 \dots K$, we need to impose the constraint
-	\emph{exactly\_one} on the formulas $x_{ijk}$, with $i\in I_k$, $j \in J_k$. This amounts to imposing the constraints $$\bigwedge_{k=1}^{K} \bigvee_{i\in I_k, j\in J_k} x_{ijk}\qquad \text{(at\_least\_one)}$$ and $$\bigwedge_{k=1}^{K} \bigwedge_{\substack{i,i'\in I_k \\ j,j'\in J_k \\ (i,j) \neq (i',j')}} \neg(x_{ijk}\wedge x_{i'j'k}) \qquad \text{(at\_most\_one)}$$
+	\emph{exactly\_one} on the formulas $x_{ijk}$, with $i\in I_k$, $j \in J_k$. This amounts to imposing the constraints \begin{equation*}\bigwedge_{k=1}^{K} \bigvee_{i\in I_k, j\in J_k} x_{ijk}\qquad \text{(at\_least\_one)}\end{equation*} and \begin{equation*}\bigwedge_{k=1}^{K} \bigwedge_{\substack{i,i'\in I_k \\ j,j'\in J_k \\ (i,j) \neq (i',j')}} \neg(x_{ijk}\wedge x_{i'j'k}) \qquad \text{(at\_most\_one)}\end{equation*}
 	\item \emph{No-overlap constraints:} Let's assume that the $k$-th circuit has the bottom-left vertex on the point of coordinates $(i,j)$. We can then observe that the $k'$-th circuit overlaps with the former if and only if its bottom-left corner lies within the rectangle with vertices:
 	\begin{itemize}
 		\item $V1(\max(0, i-w(k')+1), \max(0, j-h(k')+1))$;
@@ -36,29 +36,94 @@ Our definitions of the atomic formulas $x_{ijk}$ already guarantee that every ci
 		\item $V3(\min(i+w(k)-1, W-w(k')), \min(j+h(k)-1, H-h(k')))$;
 		\item $V4(\max(0, i-w(k')+1), \min(j+h(k)-1, H-h(k')))$.
 	\end{itemize}
-	By defining, for each two circuits $k, k'$, the sets $$I_{kk'}:=\left\{\max(0, i-w(k')+1, \dots, \min(i+w(k)-1, W-w(k')\right\}$$ and 
-	$$J_{kk'}:=\left\{\max(0, j-h(k')+1), \dots, \min(j+h(k)-1, H-h(k'))\right\}$$
+	By defining, for each two circuits $k, k'$, the sets \begin{equation*}I_{kk'}:=\left\{\max(0, i-w(k')+1, \dots, \min(i+w(k)-1, W-w(k')\right\}\end{equation*} and 
+	\begin{equation*}J_{kk'}:=\left\{\max(0, j-h(k')+1), \dots, \min(j+h(k)-1, H-h(k'))\right\}\end{equation*}
 	we can then define these constraints as:
-	$$\bigwedge_{1\leq k<k'\leq K} \bigwedge_{\substack{i \in I_k \\ j \in J_k \\ i'\in I_{kk'} \\ j' \in J_{kk'}}} \left(\neg x_{ijk} \lor \neg x_{i'j'k'}\right)$$
+	\begin{equation*}\bigwedge_{1\leq k<k'\leq K} \bigwedge_{\substack{i \in I_k \\ j \in J_k \\ i'\in I_{kk'} \\ j' \in J_{kk'}}} \left(\neg x_{ijk} \lor \neg x_{i'j'k'}\right)\end{equation*}
 \end{itemize}
 
-A significant drawback of this approach is that the number of constraints tends to become extremely large as the number of rectangles $K$ and the dimensions $H, W$ of $ABCD$ increase. In order to address at least part of this problem, we tried several different encodings for the \emph{at\_most\_one} constraint, namely the \emph{bitwise}, the \emph{Heule's} and the \emph{sequential} encodings, and the last one experimentally appeared to work better. However, keeping in mind the practical motivation of the problem, we ultimately decided to get rid entirely of the \emph{at\_most\_one} constraint, and only the \emph{at\_least\_one} constraint was left there: in this way, in a given solution a circuit would be given a list (if any) of possible positions of its bottom-left vertex. This approach in general increases the number of solutions, but in order to obtain a solution of the original problem it is sufficient, for each rectangle $k$, to choose arbitrarily only one of the possible positions of its bottom-left vertex returned by the the solver.
+A significant drawback of this approach is that the number of constraints tends to become extremely large as the number of rectangles $K$ and the dimensions $H, W$ of $ABCD$ increase. In order to address at least part of this problem, we tried several different encodings for the \emph{at\_most\_one} constraint, namely the \emph{bitwise}, the \emph{Heule's} and the \emph{sequential} encodings, and the last one experimentally appeared to work better. However, keeping in mind the practical motivation of the problem, we ultimately decided to get rid entirely of the \emph{at\_most\_one} constraint, and only the \emph{at\_least\_one} constraint was left there: in this way, in a given solution a circuit would be assigned a list (if any) of possible positions of its bottom-left vertex. This approach in general increases the number of solutions, but in order to obtain a solution of the original problem it is sufficient, for each rectangle $k$, to choose arbitrarily only one of the possible positions of its bottom-left vertex returned by the the solver.
 
 \subsubsection{Symmetry-breaking constraints}
-Again, since we observed that the time required to generate all the constraints often far exceeded the time needed to actually solve the problem, we opted not to add additional implied constraints that could improve the time required to satisfy the constraints. Moreover, so as not to slow down the constraint generation too much, we decided to add only two symmetry-breaking constraints: one for the horizontal symmetry and one for the vertical symmetry. 
+Again, since we observed that the time required to generate all the constraints often far exceeded the time needed to actually solve the problem, we opted not to add additional implied constraints that could improve the time required to satisfy the constraints. Moreover, so as not to slow down the constraint generation too much, we decided to work with only two symmetry-breaking constraints: one for the horizontal symmetry and one for the vertical symmetry. 
 
-Let $X$ be the set of all variables $x_{ijk}$. Then the permutations on $X$ 
-\begin{align*}
+Let $X$ be the set of all variables $x_{ijk}$. Then the permutations on $X$ \begin{align*}
 	\pi_h \colon X & \longrightarrow X \\
 	x_{ijk} & \longmapsto x_{(W-i-w(k))jk}
 \end{align*}
-and 
-\begin{align*}
+and \begin{align*}
 	\pi_v \colon X & \longrightarrow X \\
 	x_{ijk} & \longmapsto x_{i(H-j-h(k))k}
 \end{align*}
 identify respectively the horizontal and the vertical symmetries of the model. 
 
-Unlike with the previous approach with CP, we do not have global constraints at our disposal. A possible solution would be to implement the lexicographic ordering constraint in a naive way. In
+Unlike with the previous approach with CP, we do not have global constraints at our disposal, and we have to implement the lexicographic constraints \lq\lq from scratch\rq\rq\,. Since we are working with boolean variables, for $x,y\in X$, the condition $x\leq y$ corresponds to the condition $x\to y$, and $x=y$ corresponds to $x\leftrightarrow y$. In this way the lexicographic ordering constraint $\text{lex}([Y_1,\dots, Y_l],[Z_1,\dots,Z_l])$ can be implemented for example as: \begin{equation*}\left(Y_1\to Z_1\right) \wedge \bigwedge_{i=2}^l \left(\left(\bigwedge_{j=1}^{i-1} Y_j \leftrightarrow Z_j \right) \to \left(Y_i \to Z_i\right) \right).\end{equation*} This naive implementation of the constraint, however, produces formulas which grow quadratically in size (atom occurences) with respect to $l$. 
 
+Another possible solution (intuitively similar to the sequential encoding of the \emph{at\_most\_one} constraints), which keeps the size of the constraint relatively small, is to introduce $l-1$ new variables $S_{j}$ that should be true if and only if $Y_i \leftrightarrow Z_i$ for $i=1,\dots, j$. In this case the constraint can be defined as: \begin{align*} \text{lex\_lesseq}&(\left[Y_1,\dots,Y_l\right],\left[Z_1,\dots,Z_l\right]):= \left(Y_1\to Z_1\right) \wedge \left( S_1 \leftrightarrow \left(Y_1 \leftrightarrow Z_1\right) \right) \wedge \\ &\wedge \bigwedge_{i=2}^{l-1} \left(S_i \leftrightarrow \left(S_{i-1} \wedge \left(Y_i \leftrightarrow Z_i \right)\right)\right) \wedge\bigwedge_{i=1}^{l-1} \left(S_i \to \left(Y_{i+1}\to Z_{i+1}\right)\right).
+\end{align*}
+This last encoding makes the size of the constraint grow linearly with respect to $l$.
+
+The symmetry-breaking constraints are then implemented as:
+\begin{align*}
+	& \text{lex\_lesseq}(X,\pi_h(X)); \\
+	& \text{lex\_lesseq}(X,\pi_v(X)).
+\end{align*}
+
+Lastly, as a compromise between the need to speed up the generation of the formula to be satisfied and the pruning of the search space, we also tested a \lq\lq partial\rq\rq\, lexicographic ordering constraint: instead of comparing all of the variables in $X$ to $\pi_h(X)$ and $\pi_v(X)$, we compare only the first $f(n)$ variables, where $n=|X|$, and $f$ is a non-decreasing function such that $\forall x\in\left\{1,\dots,n\right\}, f(x)<=x$. In our case we used specifically !!!!!!!!!!INSERIRE LA FUNZIONE (N/2? SQRT(N)?) E I RISULTATI!!!!!!!!!!
+
+\subsubsection{Rotations}
+In order to model the possibility to rotate the circuits when placing them in $ABCD$, we introduce the new set of atoms $Y =\left\{y_{ijk}\right\}$ with the intended meaning that $y_{ijk}$ is true if and only if the bottom-left vertex of the rotated $k$-th circuit is the point $(i,j)$. Analogously to the previous case, in order to reduce the amount of additional atoms, we restrict, for each circuit $k$, the $i$ and $j$ indices respectively to the sets $I_k'=\left\{0,\dots,W-h(k)\right\}$ and $J_k'=\left\{0,\dots,H-w(k)\right\}$. 
+
+The constraints needed to guarantee the correctness of the returned solutions are entirely analogous to what we presented earlier, with the addition of the new variables:
+\begin{equation*}
+	\bigwedge_{k=1}^{K} \left(\bigvee_{i\in I_k, j\in J_k} x_{ijk} \lor \bigvee_{i\in I_k', j \in J_k'} y_{ijk}\right) \qquad \text{(at\_least\_one)}
+\end{equation*}
+\begin{equation*}
+	\bigwedge_{k=1}^K \left(A_k \wedge B_k \wedge C_k\right) \qquad \text{(at\_most\_one)},
+\end{equation*}
+where \begin{align*} & A_k = \bigwedge_{\substack{i,i'\in I_k \\ j,j'\in J_k \\ (i,j) \neq (i',j')}} \neg(x_{ijk}\wedge x_{i'j'k}) \\ & B_k = \bigwedge_{\substack{i\in I_k \\ j\in J_k \\ i'\in I_k' \\ j' \in J_k'}} \neg(x_{ijk}\wedge y_{i'j'k}) \\ & C_k = \bigwedge_{\substack{i,i'\in I_k' \\ j,j'\in J_k' \\ (i,j) \neq (i',j')}} \neg(y_{ijk}\wedge y_{i'j'k}).
+\end{align*}
+When modeling in this way the problem, we get an upper bound on the number of atoms in $Z:=X\cup Y$ of $2WHK$, and the number of constraints increases even more with respect to the problem without the possibility to rotate circuits, regardless of the chosen encodings. For this reason, we decided to remove the \emph{at\_most\_one} constraint in this case too. Again, from a returned solution of the problem without the \emph{at\_most\_one} constraint we can easily obtain a solution of the original problem by choosing arbitrarily, for every $k \in \left\{1,\dots,K\right\}$, only one of the variables $x_{ijk}$ or $y_{ijk}$ that have been assigned the truth value \textbf{t}.
+
+Regarding the \emph{no\_overlap} constraints, we rename the variables in $Z$ as:
+\begin{equation*}
+	z_{ijk}:= \begin{cases}
+		x_{ijk} & \text{for $1\leq k\leq K$,}\\
+		y_{ij(k-K)} & \text{for $K+1\leq k \leq 2K $}
+	\end{cases}
+\end{equation*}
+Then we can define the constraints in the same way as before: 
+\begin{equation*}
+	\bigwedge_{1\leq k<k'\leq 2K} \bigwedge_{\substack{i \in I_k \\ j \in J_k \\ i'\in I_{kk'} \\ j' \in J_{kk'}}} \left(\neg z_{ijk} \lor \neg z_{i'j'k'}\right),
+\end{equation*}
+where $\forall k\in \left\{K+1,\dots,2K\right\}$, $w(k):=h(k-K)$ and $h(k):=w(k-K)$.
+
+Concerning symmetry-breaking constraints, we adapt the previous ones (using the \lq\lq sequential\rq \rq\, encoding of the \emph{lex\_lesseq} predicate) to the new set of atoms $Z$:
+\begin{align*}
+	& \text{lex\_lesseq}(Z,\pi_h(Z)), \\
+	& \text{lex\_lesseq}(Z,\pi_v(Z)),
+\end{align*}
+where in this case 
+\begin{align*}
+	\pi_h \colon Z & \longrightarrow Z \\
+	z_{ijk} & \longmapsto z_{(W-i-w(k))jk}
+\end{align*}
+and \begin{align*}
+	\pi_v \colon Z & \longrightarrow Z \\
+	z_{ijk} & \longmapsto z_{i(H-j-h(k))k}.
+\end{align*}
+
+As shown before, in the actual Z3Py implementation of the model, we chose not to compare all of the variables in $Z$, and we limited the comparison to the first !!!!!FUNZIONE!!!!! ones.
+
+Lastly, we considered adding more atoms (a set $R=\left\{r_k\right\}$ where $r_k$ is true if and only if the $k$-th circuit is rotated) and implied constraints, but this has experimentally proven to be ineffective either because they increased significantly the time required to generate the formula to satisfy or because they actually increased the time needed for the Z3 solver to check the satisfiability of the formula.
+
+\subsection{Optimization}
+Since we are limited to check satisfability of propositional formulas, we do not have a direct way to implement optimization, like for example in CP or MIP models. We identified instead two main possibilities that exploit the bounds on the height of the outer rectangle shown previously (DISTINGUIAMO I CASI ROTATIONS VS NO ROTATIONS?). The first one is performing a linear search starting from the lower bound: we check the satisfiability of the constraints when $H$ coincides with the lower bound; if the constraints are satisfiable, then the returned model identifies an optimal solution of the instance; if they are not satisfiable, then we increment $H$ by $1$ and repeat the process until a solution is found. As soon a solution is found, then it is trivially an optimal one (we are assuming here that a solution exists within the lower and the upper bounds, that is, there isn't any rectangle in a given instance whose dimensions are both greater than the fixed width).
+
+RISCRIVERE MEGLIO The second possibility exploits the monotony of the (un)satisfiability of the formula with respect to the height $H$ and consists in performing a binary search between the lower and the upper bounds provided earlier. One thing we noticed in intermediate returned solutions is that often there are several empty lines. We can exploit this fact to partly improve the binary search. Instead of replacing the value of the current upper bound $H_t$ to the height of an optimal solution $H^*$ with the height of the last found solution $H_{\text{current}}$, we can replace $H_t$ with $H_{\text{current}}-E$, where $E$ is the number of empty lines in the current solutions.
+
+If $U$ is the upper bound on the height of $ABCD$, and $L$ is the lower bound, then the first approach requires to solve $U-L+1$ instances in the worst case, while the second one requires to solve $\simeq \log{(U-L)}$ instances. For this reason, the second approach is in general preferable. However, the first approach worked particularly well with the specific assigned instances, as the optimal height coincides with the lower bound in all of the instances that we were able to solve within the timout limits of $300$ seconds.
+
+\subsection{Results}
+QUI VANNO RISULTATI DEI TEST (+ GRAFICI)
 \end{document}
