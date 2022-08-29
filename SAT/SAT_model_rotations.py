@@ -173,7 +173,7 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
 
         solutions = solutionsa+solutionsb
         print(solutions)
-        return min_height, solutions, s.statistics()
+        return min_height, solutions, s.statistics(), end_time - starting_time
 
     # If unsatisfiable
     return None
