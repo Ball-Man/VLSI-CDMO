@@ -117,6 +117,11 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
     dimensionsboth = dimensions+[item[::-1] for item in dimensions] #dimensioni di tutti i rettangoli "base" e poi di tutti i rettangoli ruotati
     #Voglio che X[k][j][i] == 1 se e solo se l'origine del rettangolo k è nelle coordinate i,j
 
+    for k in range(nofrectangles):
+        if dimensions[k][0] == dimensions[k][1]:
+            for v in flatten(Xr[k]):
+                s.add(Not(v))
+
     starting_time=time.time()
     print('generating solver:')
     
