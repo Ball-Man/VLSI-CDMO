@@ -48,7 +48,7 @@ def gather(directories: list[str], keynames: list[str]) -> DATA_TYPE:
         bars[base_dirname] = {}
         for key in keynames:
             bars[base_dirname][key] = [
-                float('inf') for _ in range(NUM_INSTANCES)
+                THRESHOLD + 1 for _ in range(NUM_INSTANCES)
             ]
 
         for filename in glob.glob(pt.join(directory, '*')):
@@ -87,11 +87,17 @@ def plot(data: DATA_TYPE):
 
     for dir_index, dirname in enumerate(data.keys()):
 
+        last_key = None
         for key in data[dirname].keys():
-            # Ignore keys for now
+            # Stack keys in order
+            if last_key is None:
+                bottom = None
+            else:
+                bottom = data[dirname][last_key]
+            last_key = key
 
             plt.bar(indeces + bar_width[dir_index], data[dirname][key],
-                    width=bar_step, label=dirname)
+                    width=bar_step, bottom=bottom, label=dirname)
 
     plt.axhline(y=THRESHOLD, color='red')
     plt.xticks(ticks, ticks + 1)
