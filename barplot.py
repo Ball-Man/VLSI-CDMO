@@ -11,6 +11,9 @@ import glob
 import os.path as pt
 import json
 
+import matplotlib.pyplot as plt
+import numpy as np
+
 
 MAIN_HELP = '''
 Show (vertical) barplot given a list of directories containing
@@ -56,7 +59,7 @@ def gather(directories: list[str], keynames: list[str]) -> DATA_TYPE:
                 continue
 
             # Extract info
-            index = int(re_result.groups()[0])
+            index = int(re_result.groups()[0]) - 1
             if index >= NUM_INSTANCES:
                 print(f'File index is greater than {NUM_INSTANCES}, '
                       'skipping')
@@ -71,7 +74,29 @@ def gather(directories: list[str], keynames: list[str]) -> DATA_TYPE:
 
 def plot(data: DATA_TYPE):
     """(TODO) show given data in a barplot."""
-    print(data)
+    indeces = np.array([i for i in range(NUM_INSTANCES)])
+
+    # Ticks for smaller graphs
+    # ticks = np.array([i for i in range(0, NUM_INSTANCES, 5)])
+    ticks = indeces
+
+    # Adjust bar width based on number of categories (directories)
+    width = 1
+    bar_step = 1 / (len(data) + 1)
+    bar_width = np.arange(-width / 2, width / 2, bar_step)[1:]
+
+    for dir_index, dirname in enumerate(data.keys()):
+
+        for key in data[dirname].keys():
+            # Ignore keys for now
+
+            plt.bar(indeces + bar_width[dir_index], data[dirname][key],
+                    width=bar_step, label=dirname)
+
+    plt.xticks(ticks, ticks + 1)
+    plt.legend()
+
+    plt.show()
 
 
 def main(directories: list[str], keynames: list[str]):
