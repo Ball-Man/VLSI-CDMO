@@ -10,6 +10,7 @@ import re
 import glob
 import os.path as pt
 import json
+from itertools import cycle
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -85,19 +86,41 @@ def plot(data: DATA_TYPE):
     bar_step = 1 / (len(data) + 1)
     bar_width = np.arange(-width / 2, width / 2, bar_step)[1:]
 
+    # Fix colors for each key, only the first one shall cycle colors
+    fig, ax = plt.subplots()
+    # Deplete first key
+    keys = iter(next(iter(data.values())).keys())
+    next(keys)
+    color_cycle = cycle(plt.rcParams["axes.prop_cycle"].by_key()["color"])
+    keys_colors = {key: next(color_cycle) for key in keys}
+
     for dir_index, dirname in enumerate(data.keys()):
+        # Total value for each bar accounting for all keys
+        total_values = [
+            sum(data[dirname][k][i] for k in data[dirname].keys())
+            for i in range(NUM_INSTANCES)
+        ]
 
         last_key = None
         for key in data[dirname].keys():
             # Stack keys in order
             if last_key is None:
                 bottom = None
+                color = next(color_cycle)
             else:
                 bottom = data[dirname][last_key]
+                color = keys_colors[key]
             last_key = key
 
-            plt.bar(indeces + bar_width[dir_index], data[dirname][key],
-                    width=bar_step, bottom=bottom, label=dirname)
+            barplot = plt.bar(indeces + bar_width[dir_index],
+                              data[dirname][key],
+                              width=bar_step, bottom=bottom, label=dirname,
+                              color=color)
+
+            # Style bars exceeding the threshold
+            for index, total_value in enumerate(total_values):
+                if total_value > THRESHOLD:
+                    barplot[index].set_alpha(0.4)
 
     plt.axhline(y=THRESHOLD, color='red')
     plt.xticks(ticks, ticks + 1)
