@@ -93,7 +93,9 @@ def plot(data: DATA_TYPE):
             plt.bar(indeces + bar_width[dir_index], data[dirname][key],
                     width=bar_step, label=dirname)
 
+    plt.axhline(y=THRESHOLD, color='red')
     plt.xticks(ticks, ticks + 1)
+    plt.yscale('log')
     plt.legend()
 
     plt.show()
