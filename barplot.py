@@ -13,6 +13,7 @@ import json
 from itertools import cycle
 
 import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
 import numpy as np
 
 
@@ -89,11 +90,14 @@ def plot(data: DATA_TYPE):
     # Fix colors for each key, only the first one shall cycle colors
     fig, ax = plt.subplots()
     # Deplete first key
-    keys = iter(next(iter(data.values())).keys())
-    next(keys)
+    keys_ex = iter(next(iter(data.values())).keys())
+    first_key = next(keys_ex)
+    keys_ex = tuple(keys_ex)
     color_cycle = cycle(plt.rcParams["axes.prop_cycle"].by_key()["color"])
-    keys_colors = {key: next(color_cycle) for key in keys}
+    keys_colors = {key: next(color_cycle) for key in keys_ex}
 
+    keys_artists = {key: [] for key in keys_ex}
+    first_key_artists = []
     for dir_index, dirname in enumerate(data.keys()):
         # Total value for each bar accounting for all keys
         total_values = [
@@ -117,6 +121,8 @@ def plot(data: DATA_TYPE):
                               width=bar_step, bottom=bottom, label=dirname,
                               color=color)
 
+            keys_artists.get(key, first_key_artists).append(barplot)
+
             # Style bars exceeding the threshold
             for index, total_value in enumerate(total_values):
                 if total_value > THRESHOLD:
@@ -125,7 +131,9 @@ def plot(data: DATA_TYPE):
     plt.axhline(y=THRESHOLD, color='red')
     plt.xticks(ticks, ticks + 1)
     plt.yscale('log')
-    plt.legend()
+    plt.legend([*first_key_artists,
+                *[Patch(color=color) for color in keys_colors.values()]],
+               [*data.keys(), *keys_ex])
 
     plt.show()
 
