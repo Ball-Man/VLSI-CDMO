@@ -1,4 +1,6 @@
 pyglet
 minizinc
 gurobipy
-
+z3-solver
+pulp
+matplotlib
