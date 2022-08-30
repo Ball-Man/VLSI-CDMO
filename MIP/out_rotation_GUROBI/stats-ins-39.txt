@@ -1,0 +1,32 @@
+{
+    "Status": 9,
+    "Runtime": 300.1586513519287,
+    "Work": 105.90180248738207,
+    "ObjVal": 61,
+    "ObjBound": 60,
+    "ObjBoundC": 60,
+    "MIPGap": 0.01639344262295082,
+    "IntVio": 0,
+    "BoundVio": 0,
+    "ConstrVio": 5.684341886080802e-14,
+    "IterCount": 7016142,
+    "BarIterCount": 0,
+    "NodeCount": 136804,
+    "SolCount": 10,
+    "PoolObjBound": 60,
+    "PoolObjVal": [
+        61,
+        61.999999993699994,
+        62,
+        62.99999999359999,
+        63,
+        63.99999999349998,
+        63.99999999999999,
+        65,
+        66,
+        66.99999999999997
+    ],
+    "solutionTime": 300.236811876297,
+    "solutionCpuTime": 300.23399999993853,
+    "status": "Not Solved"
+}

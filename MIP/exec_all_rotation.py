@@ -23,6 +23,7 @@ def format_result(result):
     return ret
 
 def main(solver=solvers[0]):
+    out_dir = f"{DEFAULT_OUTPUT_DIR}_{solver}"
 
     # Define a new instance for each input file
     for instance_file in glob.glob(pt.join(DEFAULT_INSTANCES_DIR, '*')):
@@ -36,15 +37,17 @@ def main(solver=solvers[0]):
         print()
 
         # Dump results and statistics on file
-        os.makedirs(DEFAULT_OUTPUT_DIR, exist_ok=True)
-        output_basename = (f'out-{pt.splitext(pt.basename(instance_file))[0]}'
-                        '.txt')
+        os.makedirs(out_dir, exist_ok=True)
+        
         stats_basename = (f'stats-{pt.splitext(pt.basename(instance_file))[0]}'
                         '.txt')
-        with open(pt.join(DEFAULT_OUTPUT_DIR, output_basename), 'w') as fout:
-            fout.write(format_result(result["result"]))
+        if result["status"] == "Optimal":
+            output_basename = (f'out-{pt.splitext(pt.basename(instance_file))[0]}'
+                        '.txt')
+            with open(pt.join(out_dir, output_basename), 'w') as fout:
+                fout.write(format_result(result["result"]))
 
-        with open(pt.join(DEFAULT_OUTPUT_DIR, stats_basename), 'w') as fout:
+        with open(pt.join(out_dir, stats_basename), 'w') as fout:
             dump_statistics(result["statistics"], result["status"], fout)
 
 

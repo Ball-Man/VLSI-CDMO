@@ -1,4 +1,4 @@
-from pulp import LpVariable, LpProblem, LpMinimize, LpStatus, GUROBI, CPLEX_PY, PULP_CBC_CMD, LpContinuous, LpInteger 
+from pulp import LpVariable, LpProblem, LpMinimize, LpStatus, LpContinuous, LpInteger, LpBinary 
 import pulp as pl
 import json
 from math import ceil
@@ -6,8 +6,7 @@ from math import ceil
 from util import linear_max, linear_or, lex_less
 
 DEFAULT_TIME_LIMIT = 5*60
-VARIABLE_TYPE = LpInteger
-
+VARIABLE_TYPE = LpContinuous
 
 def supported_solver():
     '''Get a list with the supported pulp solver.'''
@@ -55,7 +54,7 @@ def solve(width, n, circuits, name="rotation", solver="PULP_CBC_CMD", export_fil
     for i in range(n):
         x.append(LpVariable(f"x_{i}", 0, width - circuits[i][0], VARIABLE_TYPE))
         y.append(LpVariable(f"y_{i}", 0, max_height - circuits[i][1], VARIABLE_TYPE))
-        r.append(LpVariable(f"r_{i}", 0, 1))
+        r.append(LpVariable(f"r_{i}", cat=LpBinary))
         model += (x[i] - r[i]*circuits[i][0] + r[i]*circuits[i][1] <= width - circuits[i][0], f"width_{i}")
     
     # Set height as the max y[i] + (h[i] if not rotated else w[i])
@@ -121,9 +120,11 @@ def solve(width, n, circuits, name="rotation", solver="PULP_CBC_CMD", export_fil
         model.writeLP(export_file+".lp")
         print(f"Model exported in {export_file}")
 
+    
+    
     rect = _format_solution(circuits, n, x, y, r)
-        
-    return {"result": {"width": width, "height": round(height.varValue), "rect": rect},
+    final_height = round(height.varValue) if height.varValue is not None else None
+    return {"result": {"width": width, "height": final_height, "rect": rect},
             "statistics": _get_solver_statistics(solver, model),
             "status": LpStatus[model.status]}
 
@@ -159,6 +160,8 @@ def _format_solution(circuits, n, x, y, r):
     '''
     rect = []
     for i in range(n):
+        if r[i].varValue is None or r[i].varValue is None or r[i].varValue is None:
+            return None
         if round(r[i].varValue) == 0:
             rect.append((circuits[i][0], circuits[i][1], round(x[i].varValue), round(y[i].varValue)))
         else:

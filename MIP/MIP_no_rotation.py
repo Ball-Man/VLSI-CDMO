@@ -1,4 +1,4 @@
-from pulp import LpVariable, LpProblem, LpMinimize, LpStatus, GUROBI, CPLEX_PY, PULP_CBC_CMD, LpContinuous, LpInteger 
+from pulp import LpVariable, LpProblem, LpMinimize, LpStatus, LpContinuous, LpInteger
 import pulp as pl
 import json
 from math import ceil
@@ -6,9 +6,11 @@ from math import ceil
 from util import linear_max, lex_less, linear_or
 
 DEFAULT_TIME_LIMIT = 5*60
-VARIABLE_TYPE = LpInteger
+VARIABLE_TYPE = LpContinuous
 
 def supported_solver():
+    '''Get a list with the supported pulp solver.'''
+
     return pl.listSolvers(onlyAvailable=True)
 
 def solve(width, n, circuits, name="no_rotation", solver="PULP_CBC_CMD", sort_column_row = False, export_file=None, time_limit=DEFAULT_TIME_LIMIT):
@@ -166,8 +168,9 @@ def solve(width, n, circuits, name="no_rotation", solver="PULP_CBC_CMD", sort_co
         print(f"Model exported in {export_file}")
 
     
-    rect = [(circuits[i][0], circuits[i][1], round(x[i].varValue), round(y[i].varValue)) for i in range(n)]
-    return {"result": {"width": width, "height": round(height.varValue), "rect": rect},
+    rect = _format_solution(circuits, n, x, y)
+    final_height = round(height.varValue) if height.varValue is not None else None
+    return {"result": {"width": width, "height": final_height, "rect": rect},
             "statistics": _get_solver_statistics(solver, model),
             "status": LpStatus[model.status]}
 
@@ -193,3 +196,19 @@ def _get_solver_statistics(solver, model):
     ret["solutionCpuTime"] = model.solutionCpuTime
 
     return ret
+
+def _format_solution(circuits, n, x, y):
+    '''
+    Format the rectangle acording to the desired output.
+    circuits : list of tuple in the form [(x1,y1), ..., (xn, yn)].
+    n : number of circuits.
+    x : LpVariable for the x axis.
+    y : LpVariable for the y axis.
+    r : LpVariable boolean value that indicate if the chip is rotated.
+    '''
+    rect = []
+    for i in range(n):
+        if x[i].varValue is None or y[i].varValue is None:
+            return None
+        rect.append((circuits[i][0], circuits[i][1], round(x[i].varValue), round(y[i].varValue)))
+    return rect
