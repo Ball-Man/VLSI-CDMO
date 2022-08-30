@@ -6,6 +6,10 @@ command line parameters.
 Python >= 3.8.
 """
 import argparse
+import re
+import glob
+import os.path as pt
+import json
 
 
 MAIN_HELP = '''
@@ -18,24 +22,63 @@ Stat files shall be in json format, and shall be named as:
 '''
 
 
-def main(*args):
-	pass
+STAT_FILE_RE = re.compile(r'stats-ins-([0-9]+)\.(txt|json)')
+THRESHOLD = 300.
+NUM_INSTANCES = 40
+
+
+def main(directories: list[str], keynames: list[str]):
+    indeces = [i for i in range(40)]
+    # For each directory, list values for all keys
+    # bars['dirname']['key'][0 ... NUM_INSTANCES]
+    bars: dict[str, dict[str, list[float]]] = {}
+
+    for directory in directories:
+        base_dirname = pt.basename(directory)
+
+        # Fill bars by default with exceeding values
+        bars[base_dirname] = {}
+        for key in keynames:
+            bars[base_dirname][key] = [
+                float('inf') for _ in range(NUM_INSTANCES)
+            ]
+
+        for filename in glob.glob(pt.join(directory, '*')):
+            re_result = STAT_FILE_RE.match(pt.basename(filename))
+
+            # Skip if not a stat file
+            if re_result is None:
+                continue
+
+            # Extract info
+            index = int(re_result.groups()[0])
+            if index > NUM_INSTANCES:
+                print(f'File index is greater than {NUM_INSTANCES}, '
+                      'skipping')
+
+            with open(filename) as fin:
+                data = json.load(fin)
+
+            for key in keynames:
+                bars[base_dirname][key][index] = data[key]
+
+    print(bars)
 
 
 if __name__ == '__main__':
-	parser = argparse.ArgumentParser(description=MAIN_HELP)
+    parser = argparse.ArgumentParser(description=MAIN_HELP)
 
-	parser.add_argument('directories', metavar='STATS_DIR', nargs='+',
-						help='Directory containing stat files')
-	parser.add_argument('-k', '--keyname', action='append',
-						dest='keynames', metavar='KEYNAME',
-						help='Key name in the stat files used as y '
-							 'value for the bars in the plot. '
-							 'If specified multiple times, the given '
-							 'values will be rendered as stacked bars '
-							 '(order matters)')
-	args = parser.parse_args()
+    parser.add_argument('directories', metavar='STATS_DIR', nargs='+',
+                        help='Directory containing stat files')
+    parser.add_argument('-k', '--keyname', action='append',
+                        dest='keynames', metavar='KEYNAME',
+                        help='Key name in the stat files used as y '
+                             'value for the bars in the plot. '
+                             'If specified multiple times, the given '
+                             'values will be rendered as stacked bars '
+                             '(order matters)')
+    args = parser.parse_args()
 
-	print(args)
+    print(args)
 
-	main(args.directories, args.keynames)
+    main(args.directories, args.keynames)
