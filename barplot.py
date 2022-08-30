@@ -26,12 +26,17 @@ STAT_FILE_RE = re.compile(r'stats-ins-([0-9]+)\.(txt|json)')
 THRESHOLD = 300.
 NUM_INSTANCES = 40
 
+DATA_TYPE = dict[str, dict[str, list[float]]]
 
-def main(directories: list[str], keynames: list[str]):
-    indeces = [i for i in range(40)]
+
+def gather(directories: list[str], keynames: list[str]) -> DATA_TYPE:
+    """Gather all data from the given directories.
+
+    Data is returned in a nested data structure constructed as
+    follows: bars['dirname']['key'][0 ... NUM_INSTANCES - 1]
+    """
     # For each directory, list values for all keys
-    # bars['dirname']['key'][0 ... NUM_INSTANCES]
-    bars: dict[str, dict[str, list[float]]] = {}
+    bars: DATA_TYPE = {}
 
     for directory in directories:
         base_dirname = pt.basename(directory)
@@ -52,7 +57,7 @@ def main(directories: list[str], keynames: list[str]):
 
             # Extract info
             index = int(re_result.groups()[0])
-            if index > NUM_INSTANCES:
+            if index >= NUM_INSTANCES:
                 print(f'File index is greater than {NUM_INSTANCES}, '
                       'skipping')
 
@@ -61,8 +66,16 @@ def main(directories: list[str], keynames: list[str]):
 
             for key in keynames:
                 bars[base_dirname][key][index] = data[key]
+    return bars
 
-    print(bars)
+
+def plot(data: DATA_TYPE):
+    """(TODO) show given data in a barplot."""
+    print(data)
+
+
+def main(directories: list[str], keynames: list[str]):
+    plot(gather(directories, keynames))
 
 
 if __name__ == '__main__':
