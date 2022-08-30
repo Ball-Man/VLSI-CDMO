@@ -117,6 +117,11 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
     dimensionsboth = dimensions+[item[::-1] for item in dimensions] #dimensioni di tutti i rettangoli "base" e poi di tutti i rettangoli ruotati
     #Voglio che X[k][j][i] == 1 se e solo se l'origine del rettangolo k è nelle coordinate i,j
 
+    for k in range(nofrectangles):
+        if dimensions[k][0] == dimensions[k][1]:
+            for v in flatten(Xr[k]):
+                s.add(Not(v))
+
     starting_time=time.time()
     print('generating solver:')
     
@@ -164,11 +169,11 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
     if check_result == sat:
         m = s.model()
         solutionsa = [Xboth[k][j][i] for k in range(nofrectangles) for j in range(min_height - dimensionsboth[k][1] + 1) for i in range(width - dimensionsboth[k][0] + 1) if m.evaluate(Xboth[k][j][i])] #max_height--->min_height
-        solutionsb = [Xboth[k][j][i] for k in range(nofrectangles+1, 2*nofrectangles) for j in range(min_height - dimensionsboth[k][1] + 1) for i in range(width - dimensionsboth[k][0] + 1) if m.evaluate(Xboth[k][j][i])]
+        solutionsb = [Xboth[k][j][i] for k in range(nofrectangles, 2*nofrectangles) for j in range(min_height - dimensionsboth[k][1] + 1) for i in range(width - dimensionsboth[k][0] + 1) if m.evaluate(Xboth[k][j][i])]
 
         solutions = solutionsa+solutionsb
         print(solutions)
-        return min_height, solutions, s.statistics()
+        return min_height, solutions, s.statistics(), end_time - starting_time
 
     # If unsatisfiable
     return None

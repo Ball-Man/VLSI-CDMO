@@ -29,12 +29,14 @@ def dump_result(instance_data, height, fp=sys.stdout):
                   for circuit in instance_data['circuits'])
 
 
-def dump_statistics(statistics, fp=sys.stdout):
+def dump_statistics(statistics, build_time, fp=sys.stdout):
     """Format statistics and dump it (json)."""
     statistics_dict = {}
 
     for key in statistics.keys():
         statistics_dict[key] = statistics.get_key_value(key)
+
+    statistics_dict['build_time'] = build_time
 
     json.dump(statistics_dict, fp, indent=4)
 
@@ -56,7 +58,7 @@ def main(solve_func):
             continue
 
         # Unpack and decode
-        height, variables, statistics = model_results
+        height, variables, statistics, build_time = model_results
 
         for var in map(str, variables):
             match = SAT_INSTANCE_DECODER_RE.match(var)
@@ -88,7 +90,7 @@ def main(solve_func):
             dump_result(instance_data, height, fout)
 
         with open(pt.join(DEFAULT_OUTPUT_DIR, stats_basename), 'w') as fout:
-            dump_statistics(statistics, fout)
+            dump_statistics(statistics, build_time, fout)
 
 
 if __name__ == '__main__':

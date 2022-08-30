@@ -1,0 +1,23 @@
+{
+    "sat mk clause 2ary": 151725,
+    "sat mk clause nary": 1894,
+    "sat mk var": 1107,
+    "sat del clause": 205,
+    "sat conflicts": 250,
+    "sat decisions": 2979,
+    "sat propagations 2ary": 325986,
+    "sat propagations nary": 6084,
+    "sat restarts": 20,
+    "sat minimized lits": 662,
+    "sat subs resolution dyn": 13028,
+    "sat elim bool vars res": 11,
+    "sat backjumps": 250,
+    "sat subs resolution": 1380,
+    "sat elim literals": 1380,
+    "num allocs": 681558271,
+    "rlimit count": 9241174,
+    "max memory": 63.86,
+    "memory": 43.28,
+    "time": 0.216,
+    "build_time": 5.222887277603149
+}

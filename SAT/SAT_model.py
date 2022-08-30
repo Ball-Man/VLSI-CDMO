@@ -70,7 +70,7 @@ def equal_vars(var1,var2): #boolean variables are equal iff they are equivalent
 ##        constraints.append(Or(Not(And([equal_vars(listvar1[k],listvar2[k]) for k in range(i)])),Or(Not(listvar1[i]),listvar2[i])))
 ##    return And(constraints)
 
-def lex_order(listvar1,listvar2,name, func = sqrt):  #lex_order_CSE
+def lex_order(listvar1,listvar2,name, func = math.sqrt):  #lex_order_CSE
     constraints=[]
     n = len(listvar1)           #Anche qui si può provare a prendere f(n)<n per alleggerire il numero di constraints
     s = [Bool(f's_{name}_{i}') for i in range(n-1)]
@@ -122,8 +122,8 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
     print('generating solver:')
     
     for k in range(nofrectangles):  #ogni rettangolo ha almeno un'origine
-        #s.add(exactly_one(flatten(X[k]), f"origin_{k}"))
-        s.add(at_least_one(flatten(X[k])))  #per avere meno clauses posso mettere anche che ogni rettangolo ha almeno un'origine:
+        s.add(exactly_one(flatten(X[k]), f"origin_{k}"))
+        # s.add(at_least_one(flatten(X[k])))  #per avere meno clauses posso mettere anche che ogni rettangolo ha almeno un'origine:
                                             #alla peggio puoi ottenere come soluzione un rettangolo con circuiti duplicati,
                                             #e quando costruisci fisicamente il chip scegli dove piazzare i circuiti in una qualsiasi delle posizioni restituite dalla soluzione
 
@@ -170,7 +170,7 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
         m = s.model()
         solutions = [X[k][j][i] for k in range(nofrectangles) for j in range(min_height - dimensions[k][1] + 1) for i in range(width - dimensions[k][0] + 1) if m.evaluate(X[k][j][i])] #max_height--->min_height
         print(solutions)
-        return min_height, solutions, s.statistics()
+        return min_height, solutions, s.statistics(), end_time - starting_time
 
     # If unsatisfiable
     return None
