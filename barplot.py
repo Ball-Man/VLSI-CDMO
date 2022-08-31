@@ -74,7 +74,8 @@ def gather(directories: list[str], keynames: list[str]) -> DATA_TYPE:
     return bars
 
 
-def plot(data: DATA_TYPE, title=""):
+def plot(data: DATA_TYPE, title="", directory_legend: dict[str, str] = {},
+         key_legend: dict[str, str] = {}):
     """(TODO) show given data in a barplot."""
     indeces = np.array([i for i in range(NUM_INSTANCES)])
 
@@ -134,13 +135,16 @@ def plot(data: DATA_TYPE, title=""):
     plt.yscale('log')
     plt.legend([*first_key_artists,
                 *[Patch(color=color) for color in keys_colors.values()]],
-               [*data.keys(), *keys_ex])
+               [*[directory_legend.get(k, k) for k in data.keys()],
+                *[key_legend.get(k, k) for k in keys_ex]])
 
     plt.show()
 
 
-def main(directories: list[str], keynames: list[str], title=""):
-    plot(gather(directories, keynames), title=title)
+def main(directories: list[str], keynames: list[str], title="",
+         directory_legend: dict[str, str]={}, key_legend: dict[str, str] = {}):
+    plot(gather(directories, keynames), title=title,
+         directory_legend=directory_legend, key_legend=key_legend)
 
 
 if __name__ == '__main__':
@@ -157,8 +161,27 @@ if __name__ == '__main__':
                              '(order matters)')
     parser.add_argument('-t', '--title', default="",
                         help='Specify plot title')
+    parser.add_argument('--directory-legend', default=[], action='append',
+                        dest='directory_legend',
+                        help='Specify the legend name to be used for a '
+                             'stat category (directory). Names are assigned '
+                             'in order')
+    parser.add_argument('--key-legend', default=[], action='append',
+                        dest='key_legend',
+                        help='Specify the legend name to be used for a '
+                             'given key. Names are assigned in order')
     args = parser.parse_args()
+
+    # Populating the legend
+    args.directory_legend += args.directories[len(args.directory_legend):]
+    args.key_legend += args.keynames[len(args.key_legend):]
+
+    directory_legend_dict = dict(zip(map(pt.basename, args.directories),
+                                     args.directory_legend))
+    key_legend_dict = dict(zip(map(pt.basename, args.keynames),
+                               args.key_legend))
 
     # print(args)
 
-    main(args.directories, args.keynames, title=args.title)
+    main(args.directories, args.keynames, title=args.title,
+         directory_legend=directory_legend_dict, key_legend=key_legend_dict)
