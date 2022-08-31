@@ -74,7 +74,7 @@ def gather(directories: list[str], keynames: list[str]) -> DATA_TYPE:
     return bars
 
 
-def plot(data: DATA_TYPE):
+def plot(data: DATA_TYPE, title=""):
     """(TODO) show given data in a barplot."""
     indeces = np.array([i for i in range(NUM_INSTANCES)])
 
@@ -128,6 +128,7 @@ def plot(data: DATA_TYPE):
                 if total_value > THRESHOLD:
                     barplot[index].set_alpha(0.4)
 
+    plt.title(title)
     plt.axhline(y=THRESHOLD, color='red')
     plt.xticks(ticks, ticks + 1)
     plt.yscale('log')
@@ -138,8 +139,8 @@ def plot(data: DATA_TYPE):
     plt.show()
 
 
-def main(directories: list[str], keynames: list[str]):
-    plot(gather(directories, keynames))
+def main(directories: list[str], keynames: list[str], title=""):
+    plot(gather(directories, keynames), title=title)
 
 
 if __name__ == '__main__':
@@ -154,8 +155,10 @@ if __name__ == '__main__':
                              'If specified multiple times, the given '
                              'values will be rendered as stacked bars '
                              '(order matters)')
+    parser.add_argument('-t', '--title', default="",
+                        help='Specify plot title')
     args = parser.parse_args()
 
-    print(args)
+    # print(args)
 
-    main(args.directories, args.keynames)
+    main(args.directories, args.keynames, title=args.title)
