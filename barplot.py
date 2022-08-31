@@ -36,6 +36,9 @@ DATA_TYPE = dict[str, dict[str, list[float]]]
 Y_AXIS_LABEL = 'Time (s)'
 X_AXIS_LABEL = 'Instance number'
 
+# One of: none, path, svgfont
+plt.rcParams['svg.fonttype'] = 'path'
+
 def gather(directories: list[str], keynames: list[str]) -> DATA_TYPE:
     """Gather all data from the given directories.
 
