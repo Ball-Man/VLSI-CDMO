@@ -78,7 +78,7 @@ def gather(directories: list[str], keynames: list[str]) -> DATA_TYPE:
 
 def plot(data: DATA_TYPE, title="", directory_legend: dict[str, str] = {},
          key_legend: dict[str, str] = {}):
-    """(TODO) show given data in a barplot."""
+    """Show given data in a barplot."""
     indeces = np.array([i for i in range(NUM_INSTANCES)])
 
     # Ticks for smaller graphs
