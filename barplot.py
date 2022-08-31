@@ -33,6 +33,8 @@ NUM_INSTANCES = 40
 
 DATA_TYPE = dict[str, dict[str, list[float]]]
 
+Y_AXIS_LABEL = 'Time (s)'
+X_AXIS_LABEL = 'Instance number'
 
 def gather(directories: list[str], keynames: list[str]) -> DATA_TYPE:
     """Gather all data from the given directories.
@@ -90,6 +92,7 @@ def plot(data: DATA_TYPE, title="", directory_legend: dict[str, str] = {},
 
     # Fix colors for each key, only the first one shall cycle colors
     fig, ax = plt.subplots()
+    fig.set_tight_layout(True)
     # Deplete first key
     keys_ex = iter(next(iter(data.values())).keys())
     first_key = next(keys_ex)
@@ -133,6 +136,8 @@ def plot(data: DATA_TYPE, title="", directory_legend: dict[str, str] = {},
     plt.axhline(y=THRESHOLD, color='red')
     plt.xticks(ticks, ticks + 1)
     plt.yscale('log')
+    plt.ylabel(Y_AXIS_LABEL)
+    plt.xlabel(X_AXIS_LABEL)
     plt.legend([*first_key_artists,
                 *[Patch(color=color) for color in keys_colors.values()]],
                [*[directory_legend.get(k, k) for k in data.keys()],
