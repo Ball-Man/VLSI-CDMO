@@ -3,6 +3,15 @@ from itertools import combinations
 import time
 from math import sqrt
 
+import re
+import sys
+import glob
+import json
+import datetime
+import os
+import os.path as pt
+import argparse
+
 #Generic cardinality constraints
 #IMPORTANTE: Provare altri encodings
 
@@ -104,7 +113,7 @@ def vperm(A,min_height,dimensions):
 
 
 def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di coppie di coordinate [x,y]
-
+    
     s = Solver()
     
     total_area = 0
@@ -114,6 +123,8 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
         min_height = max(total_area // width, max([dimensions[i][1] for i in range(nofrectangles)]))
     else:
         min_height = max(total_area // width + 1, max([dimensions[i][1] for i in range(nofrectangles)]))
+
+    min_height = 90
     
     #X = [[[Bool(f'x_{i}_{j}_{k}') for i in range(width - dimensions[k][0] + 1)] for j in range(min_height - dimensions[k][1] + 1)] for k in range(nofrectangles)]
     #Voglio che X[k][j][i] == 1 se e solo se l'origine del rettangolo k è nelle coordinate i,j
@@ -135,10 +146,6 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
     for k in range(nofrectangles):  #ogni rettangolo ha un'origine
         s.add(PX[k][width - dimensions[k][0]])
         s.add(PY[k][min_height - dimensions[k][1]])
-
-    for k in range(nofrectangles):
-        s.add(PX[k][width-dimensions[k][0]])
-        s.add(PY[k][min_height-dimensions[k][1]])
 
     for k in range(nofrectangles):  #no overlap
         for k1 in range(k+1, nofrectangles):
@@ -243,16 +250,23 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
 
     # If satisfiable
     if check_result == sat:
+        
         m = s.model()
         #print(m)
         #solutions=build_solutions([i for k in PX for i in k if m.evaluate(i)],[i for k in PY for i in k if m.evaluate(i)], nofrectangles)
+
         #AX=[PX[k][i] for i in range(width-dimensions[k][0] +1) for k in range(nofrectangles) if (m.evaluate(PX[k][i]) and (i==0 or not m.evaluate(PX[k][i-1])))]
-        solutions=[i for i in flatten(PX+PY) if m.evaluate(i)]
-        print(solutions)
+        #solutions=[i for k in PX+PY in flatten(PX+PY) if m.evaluate(i)]
+        solutionsPX=[[PX[k][i] for i in range(width-dimensions[k][0]+1) if m.evaluate(PX[k][i])] for k in range(nofrectangles)]
+        solutionsPY=[[PY[k][i] for i in range(min_height - dimensions[k][1] +1) if m.evaluate(PY[k][i])] for k in range(nofrectangles)]
+        solutionsf=[i[0] for i in solutionsPX+solutionsPY]
+        print(solutionsf)
+        print(s.statistics())
         #solutions = [X[k][j][i] for k in range(nofrectangles) for j in range(min_height - dimensions[k][1] + 1) for i in range(width - dimensions[k][0] + 1) if m.evaluate(X[k][j][i])] #max_height--->min_height
-        return min_height, solutions #s.statistics()#, solutions, s.statistics()
+        return min_height, solutionsf, s.statistics()#, solutions, s.statistics()
 
     # If unsatisfiable
+    print('unsat')
     return 'unsat'
 
 
@@ -272,13 +286,21 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
     
 
 #FOR TESTING PURPOSE:
-#Questa è l'istanza 11
-width=18
-nofrectangles=16
-dimensions=[[3,3],[3,4],[3,5],[3,6],[3,7],[3,8],[3,10],[3,11],[4,3],[4,4],[4,5],[4,6],[5,3],[5,4],[5,5],[5,6]]
+#Questa è l'istanza 30
+#width=37
+#nofrectangles=27
+#dimensions=[[3,3],[3,4],[3,5],[3,6],[3,7],[3,8],[3,9],[3,11],[3,12],[3,13],[3,14],[3,17],[3,18],[3,21],[4,3],[4,4],[4,5],[4,6],[4,10],[4,22],[4,24],[5,3],[5,4],[5,6],[5,10],[5,14],[12,37]]
 ##X = [[[Bool(f'x_{i}_{j}_{k}') for i in range(width - dimensions[k][0] + 1)] for j in range(min_height - dimensions[k][1] + 1)] for k in range(nofrectangles)]
 
-sat_vlsi(width,nofrectangles, dimensions)
+DEFAULT_INSTANCES_DIR = pt.join(pt.dirname(__file__), '..', 'instances_json')
+
+with open(sorted(
+            glob.glob(pt.join(DEFAULT_INSTANCES_DIR, '*')))[-1]) as fin:
+    instance_data = json.load(fin)
+
+    sat_vlsi(instance_data['width'], instance_data['n'],
+                                   instance_data['circuits'])
+
         
 
 
