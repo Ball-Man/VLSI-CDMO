@@ -16,16 +16,18 @@ def linear_or(arr, big_m, model, key):
     b = []
     for i in range(len(arr)):
         b.append(LpVariable(f"{key}_b_{i}", cat=LpBinary))
-        model += (arr[i] <= big_m[i]*(1-b[i]), f"{key}_{i}")
+        model += (arr[i] <= big_m[i] -big_m[i]*b[i], f"{key}_{i}")
     model += (sum(b) >= 1, f"{key}_b_sum")
 
-def lex_less(arr1, arr2, dom1, dom2, model, key):
+def lex_less(arr1, arr2, dom1, dom2, model, key, simplify=-1):
     ''' Lexicographic ordering constraint.
 
     lex_less([x1, x2, ..., xk], [y1, y2, ..., yk],
         [(l_x1,u_x1), (l_x2,u_x2), ..., (l_xk,u_xk)],
         [(l_y1,u_y1), (l_y2,u_y2), ..., (l_yk,u_yk)],
         model, key)
+
+    simplify : order only the first n variables. Default <0
 
     x1 <= y1
     /\ (x1 = y1 -> x2 <= y2)
@@ -34,19 +36,16 @@ def lex_less(arr1, arr2, dom1, dom2, model, key):
     '''
 
     # x1 <= y1 /\
-    #     (x1 != y1 \/ x2 <= y2) /\             -> x1 - y1 + 1 <= 0 \/ y1 - x1 + 1 <= 0 \/ x2 - y2 <= 0
-    #     (x1 != y1 \/ x2 != y2 \/ x3 <= y3)    -> x1 - y1 + 1 <= 0 \/ y1 - x1 + 1 <= 0 \/ x2 - y2 + 1 <= 0 \/ y2 - x2 + 1 <= 0 \/ x3 - y3 <= 0
+    #     (x1 != y1 \/ x2 <= y2) /\             -> x1 - y1 + 1 <= 0 \/ x2 - y2 <= 0
+    #     (x1 != y1 \/ x2 != y2 \/ x3 <= y3)    -> x1 - y1 + 1 <= 0 \/ x2 - y2 + 1 <= 0 \/ x3 - y3 <= 0
     #     ...
-
-
-    # x1 != y1   ->   x1 < y1 \/ x1 > y1   ->   x1 <= y1 - 1 \/ x1 >= y1 + 1   ->   x1 - y1 + 1 <= 0 \/ -x1 + y1 +1 <= 0
-    for i in range(len(arr1)):
+    #
+    # x1 != y1   ->   x1 < y1 \/ x1 > y1 (implied false by x1 <= y1)    ->    x1 <= y1 - 1  ->  x1 - y1 + 1 <= 0
+    for i in range(len(arr1) if simplify <= 0 else simplify):
         linear_or(
-            [ arr1[k] - arr2[k] + 1 for k in range(0,i)] +   # x_k < y_k \/
-            [-arr1[k] + arr2[k] + 1 for k in range(0,i)] +   # x_k > y_k \/
+            [ arr1[k] - arr2[k] + 1 for k in range(0,i)] +   # x_k - y_k + 1 <= 0 \/
             [arr1[i] - arr2[i]],                             # x_i <= y_i
             [1 + dom1[k][1] - dom2[k][0] for k in range(0,i)] + #  B = -1, Mk = 1 + max(dom1[k]) + max(-1*dom2[k][0], -1*dom2[k][1])   ->   1 + dom1[k][1] - dom2[k][0]
-            [1 - dom1[k][0] + dom2[k][1] for k in range(0,i)] + #  B = -1, Mk = 1 + max(-1*dom1[k][0], -1*dom1[k][1]) + max(dom2[k])   ->   1 - dom1[k][0] + dom2[k][1]
             [dom1[i][1]], model, f"{key}_{i}")
     
 def linear_max(arr, dom, y, model, key):
@@ -65,7 +64,7 @@ def linear_max(arr, dom, y, model, key):
     for i in range(len(arr)):
         b.append(LpVariable(f"{key}_b_{i}", cat=LpBinary))
         model += (y >= arr[i], f"{key}_max1_{i}")
-        model += (y <= arr[i] + (u_max - dom[i][0])*(1-b[i]), f"{key}_max2_{i}")
+        model += (y <= arr[i] + u_max - u_max*b[i] - dom[i][0] + dom[i][0]*b[i], f"{key}_max2_{i}")
 
     model += (sum(b) == 1, f"{key}_sum_b")
     return y

@@ -1,0 +1,25 @@
+{
+    "Status": 2,
+    "Runtime": 0.023942947387695312,
+    "Work": 0.0032618181110252104,
+    "ObjVal": 11,
+    "ObjBound": 11,
+    "ObjBoundC": 11,
+    "MIPGap": 0,
+    "IntVio": 0,
+    "BoundVio": 0,
+    "ConstrVio": 0,
+    "IterCount": 155,
+    "BarIterCount": 0,
+    "NodeCount": 1,
+    "SolCount": 3,
+    "PoolObjBound": 11,
+    "PoolObjVal": [
+        11,
+        12,
+        13
+    ],
+    "solutionTime": 0.028174877166748047,
+    "solutionCpuTime": 0.03199999999196734,
+    "status": "Optimal"
+}
