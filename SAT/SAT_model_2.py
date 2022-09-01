@@ -244,11 +244,13 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
     # If satisfiable
     if check_result == sat:
         m = s.model()
+        #print(m)
         #solutions=build_solutions([i for k in PX for i in k if m.evaluate(i)],[i for k in PY for i in k if m.evaluate(i)], nofrectangles)
         #AX=[PX[k][i] for i in range(width-dimensions[k][0] +1) for k in range(nofrectangles) if (m.evaluate(PX[k][i]) and (i==0 or not m.evaluate(PX[k][i-1])))]
-        solutions=[i for k in PX+PY for i in k if m.evaluate(i)]
+        solutions=[i for i in flatten(PX+PY) if m.evaluate(i)]
+        print(solutions)
         #solutions = [X[k][j][i] for k in range(nofrectangles) for j in range(min_height - dimensions[k][1] + 1) for i in range(width - dimensions[k][0] + 1) if m.evaluate(X[k][j][i])] #max_height--->min_height
-        return min_height, solutions, s.statistics()#, solutions, s.statistics()
+        return min_height, solutions #s.statistics()#, solutions, s.statistics()
 
     # If unsatisfiable
     return 'unsat'
@@ -261,10 +263,10 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
 ##        while i < nofrectangles:
 ##            if str(k)[3]
         
-    for k in truey:
-        outy.append(k[0])
-    coordk=[[outx[i],outy[i]] for i in range(len(outx))]
-    X=[f'x_{coordk[k][0]}_{coordk[k][1]}_{k}' for k in range(len(outx))]
+##    for k in truey:
+##        outy.append(k[0])
+##    coordk=[[outx[i],outy[i]] for i in range(len(outx))]
+##    X=[f'x_{coordk[k][0]}_{coordk[k][1]}_{k}' for k in range(len(outx))]
         
     
     
@@ -276,7 +278,7 @@ nofrectangles=16
 dimensions=[[3,3],[3,4],[3,5],[3,6],[3,7],[3,8],[3,10],[3,11],[4,3],[4,4],[4,5],[4,6],[5,3],[5,4],[5,5],[5,6]]
 ##X = [[[Bool(f'x_{i}_{j}_{k}') for i in range(width - dimensions[k][0] + 1)] for j in range(min_height - dimensions[k][1] + 1)] for k in range(nofrectangles)]
 
-
+sat_vlsi(width,nofrectangles, dimensions)
         
 
 
