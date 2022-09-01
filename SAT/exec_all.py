@@ -14,6 +14,7 @@ import argparse
 
 from SAT_model import sat_vlsi
 from SAT_model_rotations import sat_vlsi as sat_vlsi_rot
+from SAT_model_order import sat_vlsi as sat_vlsi_ord
 
 
 # Path to json input instances, converted using convert_instances.py
@@ -101,9 +102,17 @@ if __name__ == '__main__':
                         action='store_true', default=False,
                         help='if specified, the rotation aware model will be '
                              'used')
+    parser.add_argument('-o', '--order', dest='order', action='store_true',
+                        default=False,
+                        help='if specified, use the order encodings model '
+                             '(huge performance boost)')
     args = parser.parse_args()
 
     solve_func = sat_vlsi
-    if args.rotation:
+    if args.rotation and args.order:
+        raise NotImplementedError('rotation order model not implemented')
+    elif args.order:
+        solve_func = sat_vlsi_ord
+    elif args.rotation:
         solve_func = sat_vlsi_rot
     main(solve_func)
