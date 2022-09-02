@@ -57,14 +57,14 @@
     "num_pwl_constraints": 0,
     "num_pwl_breaks": 0,
     "min_lower_bound": 0.0,
-    "max_upper_bound": 319.0,
+    "max_upper_bound": 105.0,
     "min_linear_objective": 1.0,
     "max_linear_objective": 1.0,
     "min_linear_constraints": 1.0,
-    "max_linear_constraints": 344.0,
+    "max_linear_constraints": 130.0,
     "min_linear_constraints_rhs": 1.0,
-    "max_linear_constraints_rhs": 344.0,
-    "solutionTime": 300.07541060447693,
+    "max_linear_constraints_rhs": 130.0,
+    "solutionTime": 300.0781247615814,
     "solutionCpuTime": 300.0779999999795,
     "status": "Optimal"
 }

@@ -13,7 +13,7 @@ def supported_solver():
 
     return pl.listSolvers(onlyAvailable=True)
 
-def solve(width, n, circuits, name="no_rotation", solver="PULP_CBC_CMD", sort_column_row = False, export_file=None, time_limit=DEFAULT_TIME_LIMIT):
+def solve(width, n, circuits, max_height=-1, name="no_rotation", solver="PULP_CBC_CMD", export_file=None, time_limit=DEFAULT_TIME_LIMIT):
     f'''
     Solve VLSI problem using a MILP formulation and MILP solver. Is not possible to rotate the chips.
     width : width of the plate
@@ -40,7 +40,7 @@ def solve(width, n, circuits, name="no_rotation", solver="PULP_CBC_CMD", sort_co
     min_height = max(ceil(sum([circuits[i][0]*circuits[i][1] for i in range(n)]) / width), max([circuits[i][1] for i in range(n)]))
 
     # Max height is obtained by stacking all chips in one column
-    max_height = sum([circuits[i][0] for i in range(n)])
+    max_height = (max_height if max_height > 0 else sum([circuits[i][0] for i in range(n)])) + 1 # + 1 because bounds exclude max_height
     print(f"Best height: {min_height}")
 
     # Objective variable

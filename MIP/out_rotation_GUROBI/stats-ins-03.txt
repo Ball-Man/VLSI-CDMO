@@ -1,7 +1,7 @@
 {
     "Status": 2,
-    "Runtime": 0.006999969482421875,
-    "Work": 0.0013398693713362645,
+    "Runtime": 0.015625,
+    "Work": 0.002245006593078543,
     "ObjVal": 10,
     "ObjBound": 10,
     "ObjBoundC": 10,
@@ -9,7 +9,7 @@
     "IntVio": 0,
     "BoundVio": 0,
     "ConstrVio": 0,
-    "IterCount": 71,
+    "IterCount": 109,
     "BarIterCount": 0,
     "NodeCount": 1,
     "SolCount": 2,
@@ -18,7 +18,7 @@
         10,
         11
     ],
-    "solutionTime": 0.009986639022827148,
-    "solutionCpuTime": 0.015000000013969839,
+    "solutionTime": 0.0312497615814209,
+    "solutionCpuTime": 0.031000000017229468,
     "status": "Optimal"
 }

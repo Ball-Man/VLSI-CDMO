@@ -1,7 +1,7 @@
 {
     "Status": 2,
-    "Runtime": 0.0010318756103515625,
-    "Work": 1.0609e-05,
+    "Runtime": 0,
+    "Work": 1.2729e-05,
     "ObjVal": 8,
     "ObjBound": 8,
     "ObjBoundC": 8,
@@ -17,7 +17,7 @@
     "PoolObjVal": [
         8
     ],
-    "solutionTime": 0.004001617431640625,
-    "solutionCpuTime": 0.01600000000325963,
+    "solutionTime": 0.0,
+    "solutionCpuTime": 0.0,
     "status": "Optimal"
 }

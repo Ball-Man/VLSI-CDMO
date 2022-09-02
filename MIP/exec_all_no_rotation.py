@@ -30,6 +30,7 @@ def main(solver=solvers[0]):
             instance_data = json.load(fin)
 
         print(f'solving instance: {pt.basename(instance_file)}')
+        print(instance_data)
         result = solve(**instance_data, solver=solver)
 
         dump_statistics(result["statistics"], result["status"])

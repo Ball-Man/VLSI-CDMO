@@ -1,7 +1,7 @@
 {
     "Status": 2,
-    "Runtime": 0.0279998779296875,
-    "Work": 0.008200200074998899,
+    "Runtime": 0.9218425750732422,
+    "Work": 0.45530918405405907,
     "ObjVal": 14,
     "ObjBound": 14,
     "ObjBoundC": 14,
@@ -9,17 +9,18 @@
     "IntVio": 0,
     "BoundVio": 0,
     "ConstrVio": 0,
-    "IterCount": 547,
+    "IterCount": 75542,
     "BarIterCount": 0,
-    "NodeCount": 1,
-    "SolCount": 3,
+    "NodeCount": 8611,
+    "SolCount": 4,
     "PoolObjBound": 14,
     "PoolObjVal": [
         14,
-        16,
-        21
+        14.999999998399998,
+        15,
+        17
     ],
-    "solutionTime": 0.03300166130065918,
-    "solutionCpuTime": 0.031000000017229468,
+    "solutionTime": 0.9218428134918213,
+    "solutionCpuTime": 0.9219999999622814,
     "status": "Optimal"
 }
