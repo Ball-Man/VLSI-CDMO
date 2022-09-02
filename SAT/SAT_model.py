@@ -2,45 +2,15 @@ from z3 import *
 from itertools import combinations
 import time
 from math import sqrt
+from math import ceil
 
-#Generic cardinality constraints
-#IMPORTANTE: Provare altri encodings
-
-##def toBinary(num, length = None):
-##    num_bin = bin(num).split("b")[-1]
-##    if length:
-##        return "0"*(length - len(num_bin)) + num_bin
-##    return num_bin
+#Cardinality constraints
 
 def at_least_one(bool_vars):
     return Or(bool_vars)
 
 def at_most_one_np(bool_vars, name = ""):
     return [Not(And(pair[0], pair[1])) for pair in combinations(bool_vars, 2)]
-
-
-#BITWISE ENCODING:
-##def at_most_one(bool_vars, name):
-##    constraints = []
-##    n = len(bool_vars)
-##    m = math.ceil(math.log2(n))
-##    r = [Bool(f"r_{name}_{i}") for i in range(m)]
-##    binaries = [toBinary(i, m) for i in range(n)]
-##    for i in range(n):
-##        for j in range(m):
-##            phi = Not(r[j])
-##            if binaries[i][j] == "1":
-##                phi = r[j]
-##            constraints.append(Or(Not(bool_vars[i]), phi))        
-##    return And(constraints)
-
-
-#HEULE ENCODING:
-##def at_most_one(bool_vars, name):
-##    if len(bool_vars) <= 4:
-##        return And(at_most_one_np(bool_vars))
-##    y = Bool(f"y_{name}")
-##    return And(And(at_most_one_np(bool_vars[:3] + [y])), And(at_most_one_he(bool_vars[3:] + [Not(y)], name+"_")))
 
 #SEQUENTIAL ENCODING:
 def at_most_one(bool_vars, name):
@@ -57,7 +27,7 @@ def at_most_one(bool_vars, name):
         constraints.append(Or(Not(s[i-1]), s[i]))
     return And(constraints)
 
-def equal_vars(var1,var2): #boolean variables are equal iff they are equivalent
+def equal_vars(var1,var2):  #boolean variables are equal iff they are equivalent
     return And(Or(Not(var1),var2),Or(Not(var2),var1))
 
 ##def lex_order(listvar1,listvar2):   #ORDINE LESSICOGRAFICO (NAIVE ENCODING)
@@ -103,7 +73,7 @@ def vperm(A,min_height,dimensions):
 ####################################################################################################
 
 
-def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di coppie di coordinate [x,y]
+def sat_vlsi(width, nofrectangles, dimensions, min_height): #dimensions è una lista di coppie di coordinate [x,y]
 
     s = Solver()
     
@@ -174,6 +144,47 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
 
     # If unsatisfiable
     return None
+
+def linear_optimization(width,nofrectangles,dimensions):
+
+    total_area = 0
+    
+    for i in range(nofrectangles):
+        total_area += dimensions[i][0] * dimensions[i][1]
+        
+    min_height = max(ceil(total_area / width), max([dimensions[i][1] for i in range(nofrectangles)]))        #If total area is not divisible by width we round up
+
+    while True:
+        print('Trying height =', min_height)
+        A=sat_vlsi(width, nofrectangles, dimensions, min_height)
+        print(A[2])
+        if A != None:
+            return A
+        min_height += 1
+
+def binary_optimization(width, nofrectangles, dimensions):
+    
+    total_area = 0
+    
+    for i in range(nofrectangles):
+        total_area += dimensions[i][0] * dimensions[i][1]
+        
+    min_height = max(ceil(total_area / width), max([dimensions[i][1] for i in range(nofrectangles)]))
+    max_height = sum([dimensions[k][1] for k in range(nofrectangles)])
+
+    while min_height != max_height:
+        print('Trying height =', (min_height + max_height) // 2)
+        A = sat_vlsi(width,nofrectangles, dimensions, (min_height + max_height) // 2)
+        #print(A[2])
+        if A == None:
+            min_height = ((min_height + max_height) // 2) + 1
+        else:
+            B = A   #B keeps track of the last correct solution so it can be returned without recomputing sat_vlsi if in the last iteration A == None
+            max_height = (min_height + max_height) // 2
+
+    return B
+
+
 
 #FOR TESTING PURPOSE:
 ##width=8

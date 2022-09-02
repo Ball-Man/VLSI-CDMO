@@ -12,9 +12,9 @@ import os.path as pt
 import argparse
 
 
-from SAT_model import sat_vlsi
+from SAT_model import linear_optimization as sat_vlsi
 from SAT_model_rotations import sat_vlsi as sat_vlsi_rot
-from SAT_model_order import sat_vlsi as sat_vlsi_ord
+from SAT_model_order import binary_optimization as sat_vlsi_ord
 
 
 # Path to json input instances, converted using convert_instances.py
@@ -40,7 +40,7 @@ def dump_statistics(statistics, build_time, fp=sys.stdout):
     statistics_dict['build_time'] = build_time
 
     json.dump(statistics_dict, fp, indent=4)
-
+    
 
 def main(solve_func):
     # Solve SAT problem for each instance

@@ -2,6 +2,7 @@ from z3 import *
 from itertools import combinations
 import time
 from math import sqrt
+from math import ceil
 
 import re
 import sys
@@ -12,44 +13,14 @@ import os
 import os.path as pt
 import argparse
 
-#Generic cardinality constraints
-#IMPORTANTE: Provare altri encodings
+VARIABLE_RE = re.compile(r'p[xy]_(\d+)_(\d+)')
 
-##def toBinary(num, length = None):
-##    num_bin = bin(num).split("b")[-1]
-##    if length:
-##        return "0"*(length - len(num_bin)) + num_bin
-##    return num_bin
 
 def at_least_one(bool_vars):
     return Or(bool_vars)
 
-def at_most_one_np(bool_vars, name = ""):
-    return [Not(And(pair[0], pair[1])) for pair in combinations(bool_vars, 2)]
-
-
-#BITWISE ENCODING:
-##def at_most_one(bool_vars, name):
-##    constraints = []
-##    n = len(bool_vars)
-##    m = math.ceil(math.log2(n))
-##    r = [Bool(f"r_{name}_{i}") for i in range(m)]
-##    binaries = [toBinary(i, m) for i in range(n)]
-##    for i in range(n):
-##        for j in range(m):
-##            phi = Not(r[j])
-##            if binaries[i][j] == "1":
-##                phi = r[j]
-##            constraints.append(Or(Not(bool_vars[i]), phi))        
-##    return And(constraints)
-
-
-#HEULE ENCODING:
-##def at_most_one(bool_vars, name):
-##    if len(bool_vars) <= 4:
-##        return And(at_most_one_np(bool_vars))
-##    y = Bool(f"y_{name}")
-##    return And(And(at_most_one_np(bool_vars[:3] + [y])), And(at_most_one_he(bool_vars[3:] + [Not(y)], name+"_")))
+#def at_most_one_np(bool_vars, name = ""):
+    #return [Not(And(pair[0], pair[1])) for pair in combinations(bool_vars, 2)]
 
 #SEQUENTIAL ENCODING:
 def at_most_one(bool_vars, name):
@@ -66,18 +37,8 @@ def at_most_one(bool_vars, name):
         constraints.append(Or(Not(s[i-1]), s[i]))
     return And(constraints)
 
-def equal_vars(var1,var2): #boolean variables are equal iff they are equivalent
-    return And(Or(Not(var1),var2),Or(Not(var2),var1))
-
-##def lex_order(listvar1,listvar2):   #ORDINE LESSICOGRAFICO (NAIVE ENCODING)
-##    constraints=[]
-##    n=len(listvar1)
-##    constraints.append(Or(Not(listvar1[0]),listvar2[0])) #first element of first list is ""<="" of first element of second list
-##    for i in range(1,n):     #il constraints "intero" è troppo grande, si può provare a giocare con questo range
-##        #constraints.append(Or(Not(And([equal_vars(listvar1[j],listvar2[j]) for j in range(i)])), Or(listvar1[i],Not(listvar2[i]))))
-##        #constraints.append(Implies(And([equal_vars(listvar1[k],listvar2[k]) for k in range(i)]),Implies(listvar1[i],listvar2[i])))
-##        constraints.append(Or(Not(And([equal_vars(listvar1[k],listvar2[k]) for k in range(i)])),Or(Not(listvar1[i]),listvar2[i])))
-##    return And(constraints)
+#def equal_vars(var1,var2): #boolean variables are equal iff they are equivalent
+    #return And(Or(Not(var1),var2),Or(Not(var2),var1))
 
 def lex_order(listvar1,listvar2,name, func = sqrt):  #lex_order_CSE
     constraints=[]
@@ -112,7 +73,7 @@ def vperm(A,min_height,dimensions):
 ####################################################################################################
 
 
-def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di coppie di coordinate [x,y]
+def sat_vlsi(width, nofrectangles, dimensions, min_height): #dimensions è una lista di coppie di coordinate [x,y]
     
     s = Solver()
     
@@ -123,11 +84,6 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
         min_height = max(total_area // width, max([dimensions[i][1] for i in range(nofrectangles)]))
     else:
         min_height = max(total_area // width + 1, max([dimensions[i][1] for i in range(nofrectangles)]))
-
-    min_height = 90
-    
-    #X = [[[Bool(f'x_{i}_{j}_{k}') for i in range(width - dimensions[k][0] + 1)] for j in range(min_height - dimensions[k][1] + 1)] for k in range(nofrectangles)]
-    #Voglio che X[k][j][i] == 1 se e solo se l'origine del rettangolo k è nelle coordinate i,j
 
     PX=[[Bool(f'px_{k}_{i}') for i in range(width-dimensions[k][0] +1)] for k in range(nofrectangles)]       #pos. of x_k is <= i
     PY=[[Bool(f'py_{k}_{j}') for j in range(min_height-dimensions[k][1]+1)] for k in range(nofrectangles)]
@@ -252,35 +208,73 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
     if check_result == sat:
         
         m = s.model()
-        #print(m)
-        #solutions=build_solutions([i for k in PX for i in k if m.evaluate(i)],[i for k in PY for i in k if m.evaluate(i)], nofrectangles)
 
-        #AX=[PX[k][i] for i in range(width-dimensions[k][0] +1) for k in range(nofrectangles) if (m.evaluate(PX[k][i]) and (i==0 or not m.evaluate(PX[k][i-1])))]
-        #solutions=[i for k in PX+PY in flatten(PX+PY) if m.evaluate(i)]
-        solutionsPX=[[PX[k][i] for i in range(width-dimensions[k][0]+1) if m.evaluate(PX[k][i])] for k in range(nofrectangles)]
-        solutionsPY=[[PY[k][i] for i in range(min_height - dimensions[k][1] +1) if m.evaluate(PY[k][i])] for k in range(nofrectangles)]
-        solutionsf=[i[0] for i in solutionsPX+solutionsPY]
-        print(solutionsf)
-        print(s.statistics())
-        #solutions = [X[k][j][i] for k in range(nofrectangles) for j in range(min_height - dimensions[k][1] + 1) for i in range(width - dimensions[k][0] + 1) if m.evaluate(X[k][j][i])] #max_height--->min_height
-        return min_height, solutionsf, s.statistics()#, solutions, s.statistics()
+        solutions_x=[[PX[k][i] for i in range(width-dimensions[k][0]+1) if m.evaluate(PX[k][i])][0] for k in range(nofrectangles)]
+        solutions_y=[[PY[k][i] for i in range(min_height - dimensions[k][1] +1) if m.evaluate(PY[k][i])][0] for k in range(nofrectangles)]
+
+        return (min_height, adapt_solution(solutions_x, solutions_y),
+                s.statistics(), end_time - starting_time)
 
     # If unsatisfiable
-    print('unsat')
-    return 'unsat'
+    return None
 
 
-##def build_solutions(truex, truey):
-##    outx=[]
-##    outy=[]
-##    for k in truex:
-##        while i < nofrectangles:
-##            if str(k)[3]
+def adapt_solution(solutions_x, solutions_y) -> list[str]:
+    """Map solutions in a format viable for the exec all script."""
+    new_solutions = []
+    for sx, sy in zip(map(str, solutions_x), map(str, solutions_y)):
+        # SHOULD always match
+        kx, x = VARIABLE_RE.match(sx).groups()
+        ky, y = VARIABLE_RE.match(sy).groups()
+
+        if kx != ky:
+            raise Exception('Rectangle mismatch, contact me (mistri)')
+
+        new_solutions.append(f'x_{x}_{y}_{kx}')
+
+    return new_solutions
+
+
+
+def linear_optimization(width, nofrectangles, dimensions):
+    
+    total_area = 0
+    
+    for i in range(nofrectangles):
+        total_area += dimensions[i][0] * dimensions[i][1]
         
-##    for k in truey:
-##        outy.append(k[0])
-##    coordk=[[outx[i],outy[i]] for i in range(len(outx))]
-##    X=[f'x_{coordk[k][0]}_{coordk[k][1]}_{k}' for k in range(len(outx))]
+    min_height = max(ceil(total_area / width), max([dimensions[i][1] for i in range(nofrectangles)]))        #If total area is not divisible by width we round up
+
+    while True:
+        A=sat_vlsi(width, nofrectangles, dimensions, min_height)
+        if A != None:
+            return A
+        min_height += 1
+
+
+def binary_optimization(width, nofrectangles, dimensions):
+    total_area = 0
+    
+    for i in range(nofrectangles):
+        total_area += dimensions[i][0] * dimensions[i][1]
+        
+    min_height = max(ceil(total_area / width), max([dimensions[i][1] for i in range(nofrectangles)]))
+    max_height = sum([dimensions[k][1] for k in range(nofrectangles)])
+
+    while min_height != max_height:
+        A = sat_vlsi(width,nofrectangles, dimensions, (min_height + max_height) // 2)
+        if A == None:
+            min_height = ((min_height + max_height) // 2) + 1
+        else:
+            B = A   #B keeps track of the last correct solution so it can be returned without recomputing sat_vlsi if in the last iteration A == None
+            max_height = (min_height + max_height) // 2
+
+    return B
+    
+        
+    
+
+
         
     
     
@@ -292,14 +286,14 @@ def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di copp
 #dimensions=[[3,3],[3,4],[3,5],[3,6],[3,7],[3,8],[3,9],[3,11],[3,12],[3,13],[3,14],[3,17],[3,18],[3,21],[4,3],[4,4],[4,5],[4,6],[4,10],[4,22],[4,24],[5,3],[5,4],[5,6],[5,10],[5,14],[12,37]]
 ##X = [[[Bool(f'x_{i}_{j}_{k}') for i in range(width - dimensions[k][0] + 1)] for j in range(min_height - dimensions[k][1] + 1)] for k in range(nofrectangles)]
 
-DEFAULT_INSTANCES_DIR = pt.join(pt.dirname(__file__), '..', 'instances_json')
+# DEFAULT_INSTANCES_DIR = pt.join(pt.dirname(__file__), '..', 'instances_json')
 
-with open(sorted(
-            glob.glob(pt.join(DEFAULT_INSTANCES_DIR, '*')))[-1]) as fin:
-    instance_data = json.load(fin)
+# with open(sorted(
+#             glob.glob(pt.join(DEFAULT_INSTANCES_DIR, '*')))[-1]) as fin:
+#     instance_data = json.load(fin)
 
-    sat_vlsi(instance_data['width'], instance_data['n'],
-                                   instance_data['circuits'])
+#     sat_vlsi(instance_data['width'], instance_data['n'],
+#                                    instance_data['circuits'])
 
         
 
