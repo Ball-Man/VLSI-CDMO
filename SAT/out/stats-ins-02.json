@@ -10,10 +10,10 @@
     "sat propagations nary": 14,
     "sat units": 22,
     "sat backjumps": 1,
-    "num allocs": 76583608,
+    "num allocs": 76585647,
     "rlimit count": 65932,
-    "max memory": 19.49,
-    "memory": 19.29,
-    "time": 0.005,
-    "build_time": 0.04984879493713379
+    "max memory": 19.48,
+    "memory": 19.28,
+    "time": 0.008,
+    "build_time": 0.05182981491088867
 }

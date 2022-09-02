@@ -149,8 +149,8 @@ def sat_vlsi(width, nofrectangles, dimensions, min_height): #dimensions è una l
         
         m = s.model()
 
-        solutions_x=[[PX[k][i] for i in range(width-dimensions[k][0]+1) if m.evaluate(PX[k][i])][0] for k in range(nofrectangles)]
-        solutions_y=[[PY[k][i] for i in range(min_height - dimensions[k][1] +1) if m.evaluate(PY[k][i])][0] for k in range(nofrectangles)]
+        solutions_x=[[PX[k][i] for i in range(width-dimensions[k][0]+1) if m.evaluate(PX[k][i]) == True][0] for k in range(nofrectangles)]
+        solutions_y=[[PY[k][i] for i in range(min_height - dimensions[k][1] +1) if m.evaluate(PY[k][i]) == True][0] for k in range(nofrectangles)]
 
         return (min_height, adapt_solution(solutions_x, solutions_y),
                 s.statistics(), end_time - starting_time)
@@ -187,10 +187,10 @@ def linear_optimization(width, nofrectangles, dimensions):
 
     while True:
         print('Trying height =', min_height)
-        A=sat_vlsi(width, nofrectangles, dimensions, min_height)
-        print(A[2])
-        if A != None:
-            return A
+        testsol=sat_vlsi(width, nofrectangles, dimensions, min_height)
+        print(testsol[2])
+        if testsol != None:
+            return testsol
         min_height += 1
 
 
@@ -206,15 +206,15 @@ def binary_optimization(width, nofrectangles, dimensions):
 
     while min_height != max_height:
         print('Trying height =', (min_height + max_height) // 2)
-        A = sat_vlsi(width,nofrectangles, dimensions, (min_height + max_height) // 2)
+        testsol = sat_vlsi(width,nofrectangles, dimensions, (min_height + max_height) // 2)
         #print(A[2])
-        if A == None:
+        if testsol == None:
             min_height = ((min_height + max_height) // 2) + 1
         else:
-            B = A   #B keeps track of the last correct solution so it can be returned without recomputing sat_vlsi if in the last iteration A == None
+            testsol1 = testsol   #B keeps track of the last correct solution so it can be returned without recomputing sat_vlsi if in the last iteration A == None
             max_height = (min_height + max_height) // 2
 
-    return B
+    return testsol1
     
         
     

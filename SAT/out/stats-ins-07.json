@@ -12,10 +12,10 @@
     "sat subs resolution dyn": 7,
     "sat units": 36,
     "sat backjumps": 84,
-    "num allocs": 1680282478,
-    "rlimit count": 1056015,
-    "max memory": 20.8,
-    "memory": 19.84,
-    "time": 0.01,
-    "build_time": 0.267289400100708
+    "num allocs": 1678669030,
+    "rlimit count": 1034773,
+    "max memory": 20.81,
+    "memory": 19.85,
+    "time": 0.009,
+    "build_time": 0.26130080223083496
 }
