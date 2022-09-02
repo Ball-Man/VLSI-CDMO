@@ -1,5 +1,10 @@
 """Convert a directory of instances into json format.
 
+A naive upper bound for the height is computed using a stripe based
+first fit method. Such results are also encoded into the json instance.
+This could be seen as a form of preprocessing, but still, it is a
+way to improve the results.
+
 Python >= 3.8.
 """
 import os
@@ -7,6 +12,8 @@ import os.path as pt
 import sys
 import glob
 import json
+
+from first_fit import get_max_height
 
 
 def main(dirname: str):
@@ -28,7 +35,8 @@ def main(dirname: str):
         instance_dict = {
             'width': width,
             'n': n,
-            'circuits': circuits
+            'circuits': circuits,
+            'max_height': get_max_height(width, circuits)
         }
 
         # Write new file
