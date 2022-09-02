@@ -8,7 +8,7 @@ import os.path as pt
 from MIP_rotation import solve, supported_solver
 
 DEFAULT_INSTANCES_DIR = pt.join(pt.dirname(__file__), '..', 'instances_json')
-DEFAULT_OUTPUT_DIR = pt.join(pt.dirname(__file__), 'out_rotation_tmp_')
+DEFAULT_OUTPUT_DIR = pt.join(pt.dirname(__file__), 'out_rotation')
 solvers = supported_solver()
 
 def dump_statistics(statistics, status, fp=sys.stdout):

@@ -120,6 +120,7 @@ def solve(width, n, circuits, name="rotation", solver="PULP_CBC_CMD", export_fil
         [(0, (max_height - min(circuits[i])*2)) for i in range(n)],
         [(min_height - max(circuits[i]), max_height - min(circuits[i])) for i in range(n)],
         model, "vertical_symmetry", simplify=ceil(sqrt(n)))
+    
     # Equal circuits
     for i in range(n):
         for j in range(i+1,n):
