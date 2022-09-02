@@ -93,7 +93,7 @@ def vperm(A,min_height,dimensions):
 ##    return "unsat"
                 
         
-def sat_vlsi(width, nofrectangles, dimensions): #dimensions è una lista di coppie di coordinate [x,y]
+def sat_vlsi(width, nofrectangles, dimensions, max_height): #dimensions è una lista di coppie di coordinate [x,y]
 
     s = Solver()
 

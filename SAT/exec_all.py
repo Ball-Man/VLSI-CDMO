@@ -51,7 +51,8 @@ def main(solve_func):
 
         print(f'solving instance: {pt.basename(instance_file)}')
         model_results = solve_func(instance_data['width'], instance_data['n'],
-                                   instance_data['circuits'])
+                                   instance_data['circuits'],
+                                   instance_data['max_height'])
 
         # If unsolvable (it should never happen with our instances)
         if model_results is None:

@@ -145,7 +145,7 @@ def sat_vlsi(width, nofrectangles, dimensions, min_height): #dimensions è una l
     # If unsatisfiable
     return None
 
-def linear_optimization(width,nofrectangles,dimensions):
+def linear_optimization(width,nofrectangles,dimensions, max_height):
 
     total_area = 0
     
@@ -162,7 +162,7 @@ def linear_optimization(width,nofrectangles,dimensions):
             return A
         min_height += 1
 
-def binary_optimization(width, nofrectangles, dimensions):
+def binary_optimization(width, nofrectangles, dimensions, max_height):
     
     total_area = 0
     

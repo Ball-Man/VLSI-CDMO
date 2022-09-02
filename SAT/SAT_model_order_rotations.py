@@ -176,7 +176,7 @@ def adapt_solution(solutions_x, solutions_y) -> list[str]:
 
 
 
-def linear_optimization(width, nofrectangles, dimensions):
+def linear_optimization(width, nofrectangles, dimensions, max_height):
     
     total_area = 0
     
@@ -194,7 +194,7 @@ def linear_optimization(width, nofrectangles, dimensions):
         min_height += 1
 
 
-def binary_optimization(width, nofrectangles, dimensions):
+def binary_optimization(width, nofrectangles, dimensions, max_height):
     
     total_area = 0
     
