@@ -82,7 +82,8 @@ def sat_vlsi(width, nofrectangles, dimensions, min_height): #dimensions è una l
 
     for k in range(nofrectangles):  #each circuit must have an origin
         s.add(PX[k][width - dimensions[k][0]])
-        s.add(PY[k][min_height - dimensions[k][1]])
+        s.add(PY[k][max(0,min_height - dimensions[k][1])])      #The max here is necessary because the index might be negative when not using the bounds of linear_optimization and
+                                                                #binary_optimization
 
     for k in range(nofrectangles):  #no overlap: each circuit must be either to the left, to the right, below or above each other circuit
         for k1 in range(k+1, nofrectangles):
@@ -96,20 +97,20 @@ def sat_vlsi(width, nofrectangles, dimensions, min_height): #dimensions è una l
                 A.append(Not(LR[k][k1]))
                 B.append(Not(LR[k1][k]))
                 if i>=0:
-                    if i <= width - dimensions[k][0]:
-                        A.append(PX[k][i])
-                    if i <= width - dimensions[k1][0]:
+                    if i <= width - dimensions[k][0]:   #This guarantees, in the case that i>width-w(k1), that the x coordinate of k is <= i
+                        A.append(PX[k][i])              #if instead i is also <= width - w(k1), then the last condition is appended to 
+                    if i <= width - dimensions[k1][0]:  #represent the condition of the last comment
                         B.append(PX[k1][i])
-                if 0 <= i+dimensions[k][0] <= width - dimensions[k1][0]:
+                if 0 <= i+dimensions[k][0] <= width - dimensions[k1][0]:                    
+                    A.append(Not(PX[k1][i+dimensions[k][0]]))
                     
-                    A.append(Not(PX[k1][i+dimensions[k][0]]))                
                 if 0 <= i+dimensions[k1][0] <= width-dimensions[k][0]:
                     B.append(Not(PX[k][i+dimensions[k1][0]]))
                 
-                if len(A) > 1:
+                if len(A) > 1:      #This means that there isn't only the Not(LR) variable in A
                     s.add(Or(A))
                 
-                if len(B) > 1:
+                if len(B) > 1:      #Same as above
                     s.add(Or(B))
                     
             for j in range(-max(dimensions[k][1],dimensions[k1][1]), min_height - min(dimensions[k][1],dimensions[k1][1])):  #if k is under k1 and PX[k]>i, then PY[k1]>i+height(k)
@@ -202,7 +203,10 @@ def binary_optimization(width, nofrectangles, dimensions, max_height):
         total_area += dimensions[i][0] * dimensions[i][1]
         
     min_height = max(ceil(total_area / width), max([dimensions[i][1] for i in range(nofrectangles)]))
-    max_height = sum([dimensions[k][1] for k in range(nofrectangles)])
+    #max_height = sum([dimensions[k][1] for k in range(nofrectangles)])
+
+    if min_height == max_height:
+        return sat_vlsi(width,nofrectangles, dimensions, min_height)
 
     while min_height != max_height:
         print('Trying height =', (min_height + max_height) // 2)
@@ -211,7 +215,7 @@ def binary_optimization(width, nofrectangles, dimensions, max_height):
         if testsol == None:
             min_height = ((min_height + max_height) // 2) + 1
         else:
-            testsol1 = testsol   #B keeps track of the last correct solution so it can be returned without recomputing sat_vlsi if in the last iteration A == None
+            testsol1 = testsol   #testsol1 keeps track of the last correct solution so it can be returned without recomputing sat_vlsi if in the last iteration A == None
             max_height = (min_height + max_height) // 2
 
     return testsol1
