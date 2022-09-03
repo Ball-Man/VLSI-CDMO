@@ -194,8 +194,10 @@ def sat_vlsi(width, nofrectangles, dimensions, min_height): #dimensions è una l
 
         solutions_x=[[PX[k][i] for i in range(width-min(dimensions[k])+1) if m.evaluate(PX[k][i]) == True][0] for k in range(nofrectangles)]
         solutions_y=[[PY[k][i] for i in range(min_height - min(dimensions[k]) +1) if m.evaluate(PY[k][i]) == True][0] for k in range(nofrectangles)]
+        rotations = map(m.evaluate, R)
         #print(m)
-        return (min_height, adapt_solution(solutions_x, solutions_y, R),
+        return (min_height, adapt_solution(solutions_x, solutions_y,
+                                           rotations),
                 s.statistics(), end_time - starting_time)
 
     # If unsatisfiable
@@ -205,7 +207,7 @@ def sat_vlsi(width, nofrectangles, dimensions, min_height): #dimensions è una l
 def adapt_solution(solutions_x, solutions_y, R) -> list[str]:
     """Map solutions in a format viable for the exec all script."""
     new_solutions = []
-    for sx, sy in zip(map(str, solutions_x), map(str, solutions_y)):
+    for sx, sy, r in zip(map(str, solutions_x), map(str, solutions_y), R):
         # SHOULD always match
         kx, x = VARIABLE_RE.match(sx).groups()
         ky, y = VARIABLE_RE.match(sy).groups()
@@ -213,7 +215,11 @@ def adapt_solution(solutions_x, solutions_y, R) -> list[str]:
         if kx != ky:
             raise Exception('Rectangle mismatch, contact me (mistri)')
 
-        new_solutions.append(f'x_{x}_{y}_{kx}')
+        k = int(kx)
+        if r:
+            k += len(solutions_x)
+
+        new_solutions.append(f'x_{x}_{y}_{k}')
 
     return new_solutions
 
@@ -287,11 +293,11 @@ def binary_optimization(width, nofrectangles, dimensions, max_height):
 
 #     sat_vlsi(instance_data['width'], instance_data['n'],
 #                                    instance_data['circuits'])
-width = 8
-nofrectangles=4
-dimensions=[[3,3],[5,3],[3,5],[5,5]]
+# width = 8
+# nofrectangles=4
+# dimensions=[[3,3],[5,3],[3,5],[5,5]]
         
-print(sat_vlsi(width, nofrectangles,dimensions, 8))
+# print(sat_vlsi(width, nofrectangles,dimensions, 8))
 
 
 

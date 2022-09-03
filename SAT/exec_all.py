@@ -68,11 +68,12 @@ def main(solve_func):
 
             # Normalize k (from index k to 2k - 1 it's the kth
             # rectangle, rotated)
+            k_ = k
             if k >= instance_data['n']:
                 k -= instance_data['n']
 
             w, h = instance_data['circuits'][k]
-            if k >= instance_data['n']:
+            if k_ >= instance_data['n']:
                 w, h = h, w
 
             # Update instance data with results
