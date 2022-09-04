@@ -14,7 +14,8 @@ import argparse
 
 from SAT_model import linear_optimization as sat_vlsi
 from SAT_model_rotations import sat_vlsi as sat_vlsi_rot
-from SAT_model_order import binary_optimization as sat_vlsi_ord
+from SAT_model_order import linear_optimization as sat_vlsi_ord
+from SAT_model_order_rotations import linear_optimization as sat_vlsi_ord_rot
 
 
 # Path to json input instances, converted using convert_instances.py
@@ -68,11 +69,12 @@ def main(solve_func):
 
             # Normalize k (from index k to 2k - 1 it's the kth
             # rectangle, rotated)
+            k_ = k
             if k >= instance_data['n']:
                 k -= instance_data['n']
 
             w, h = instance_data['circuits'][k]
-            if k >= instance_data['n']:
+            if k_ >= instance_data['n']:
                 w, h = h, w
 
             # Update instance data with results
@@ -111,7 +113,7 @@ if __name__ == '__main__':
 
     solve_func = sat_vlsi
     if args.rotation and args.order:
-        raise NotImplementedError('rotation order model not implemented')
+        solve_func = sat_vlsi_ord_rot
     elif args.order:
         solve_func = sat_vlsi_ord
     elif args.rotation:
