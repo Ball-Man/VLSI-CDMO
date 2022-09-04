@@ -198,7 +198,7 @@ def sat_vlsi(width, nofrectangles, dimensions, min_height, timeout=300000): #dim
 
     # If unsatisfiable
     print(s.statistics())
-    return None, None, s.statistics(), build_time
+    return None, None, s.statistics(), end_time - starting_time
 
 
 def adapt_solution(solutions_x, solutions_y) -> list[str]:
