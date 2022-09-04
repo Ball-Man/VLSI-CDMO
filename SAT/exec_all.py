@@ -14,7 +14,7 @@ import argparse
 
 from SAT_model import linear_optimization as sat_vlsi
 from SAT_model_rotations import sat_vlsi as sat_vlsi_rot
-from SAT_model_order_rotations import linear_optimization as sat_vlsi_ord
+from SAT_model_order_backup_Copia import linear_optimization as sat_vlsi_ord
 
 
 # Path to json input instances, converted using convert_instances.py

@@ -34,22 +34,22 @@ VARIABLE_RE = re.compile(r'p[xy]_(\d+)_(\d+)')
 ##        constraints.append(Or(Not(s[i-1]), s[i]))
 ##    return And(constraints)
 ##
-##def equal_vars(var1,var2): #boolean variables are equal iff they are equivalent
-##    return And(Or(Not(var1),var2),Or(Not(var2),var1))
+def equal_vars(var1,var2): #boolean variables are equal iff they are equivalent
+    return And(Or(Not(var1),var2),Or(Not(var2),var1))
 ##
-##def lex_order(listvar1,listvar2,name, func = sqrt):  #lex_order_CSE
-##    constraints=[]
-##    n = len(listvar1)
-##    s = [Bool(f's_{name}_{i}') for i in range(n-1)]
-##    constraints.append(Or(Not(listvar2[0]),listvar1[0])) #lex_geq
-##    #constraints.append(Or(Not(listvar1[0]),listvar2[0]))   #lex_lesseq
-##    constraints.append(equal_vars(s[0],equal_vars(listvar1[0],listvar2[0])))
-##    for i in range(int(func(n)) - 2):
-##        constraints.append(equal_vars(s[i+1], And(s[i], equal_vars(listvar1[i+1],listvar2[i+1]))))
-##    for i in range(int(func(n)) - 1):
-##        constraints.append(Or(Not(s[i]),(Or(Not(listvar2[i+1]),listvar1[i+1])))) #lex_geq
-##        #constraints.append(Or(Not(s[i]),(Or(Not(listvar1[i+1]),listvar2[i+1])))) #lex_lesseq
-##    return And(constraints)
+def lex_order(listvar1,listvar2,name, func = sqrt):  #lex_order_CSE
+    constraints=[]
+    n = len(listvar1)
+    s = [Bool(f's_{name}_{i}') for i in range(n-1)]
+    constraints.append(Or(Not(listvar2[0]),listvar1[0])) #lex_geq
+    #constraints.append(Or(Not(listvar1[0]),listvar2[0]))   #lex_lesseq
+    constraints.append(equal_vars(s[0],equal_vars(listvar1[0],listvar2[0])))
+    for i in range(int(func(n)) - 2):
+        constraints.append(equal_vars(s[i+1], And(s[i], equal_vars(listvar1[i+1],listvar2[i+1]))))
+    for i in range(int(func(n)) - 1):
+        constraints.append(Or(Not(s[i]),(Or(Not(listvar2[i+1]),listvar1[i+1])))) #lex_geq
+        #constraints.append(Or(Not(s[i]),(Or(Not(listvar1[i+1]),listvar2[i+1])))) #lex_lesseq
+    return And(constraints)
 ##        
 ##
 ##def exactly_one(bool_vars, name):
@@ -57,8 +57,8 @@ VARIABLE_RE = re.compile(r'p[xy]_(\d+)_(\d+)')
 ####################################################################################################
 
 #flatten list:
-##def flatten(l):
-##    return [item for sublist in l for item in sublist]
+def flatten(l):
+    return [item for sublist in l for item in sublist]
 ####################################################################################################
 
 
@@ -177,13 +177,74 @@ def sat_vlsi(width, nofrectangles, dimensions, min_height): #dimensions è una l
                     s.add(Or(D))
                 if len(DR) > 2:
                     s.add(Or(DR))
+
+##            if dimensions[k][0] + dimensions[k1][0] > width:        #if the sum of horizontal (vertical) sizes of circuits exceeds the max width (height),
+##                s.add(Or(R[k],R[k1], Not(LR[k][k1])))               #then they can't be left or right (above or below) each other
+##                s.add(Or(R[k],R[k1], Not(LR[k1][k])))
+##
+##            if dimensions[k][0] + dimensions[k1][1] > width:
+##                s.add(Or(R[k], Not(R[k1]), Not(LR[k][k1])))
+##                s.add(Or(R[k], Not(R[k1]), Not(LR[k1][k])))
+##
+##            if dimensions[k][1] + dimensions[k1][0] > width:
+##                s.add(Or(Not(R[k]), R[k1], Not(LR[k][k1])))
+##                s.add(Or(Not(R[k]), R[k1], Not(LR[k1][k])))
+##
+##            if dimensions[k][1] + dimensions[k1][1] > width:
+##                s.add(Or(Not(R[k]), Not(R[k1]), Not(LR[k][k1])))
+##                s.add(Or(Not(R[k]), Not(R[k1]), Not(LR[k1][k])))
+##
+##            if dimensions[k][1] + dimensions[k1][1] > min_height:
+##                s.add(Or(R[k], R[k1], Not(UD[k][k1])))
+##                s.add(Or(R[k], R[k1], Not(UD[k1][k])))
+##
+##            if dimensions[k][1] + dimensions[k1][0] > min_height:
+##                s.add(Or(R[k], Not(R[k1]), Not(UD[k][k1])))
+##                s.add(Or(R[k], Not(R[k1]), Not(UD[k1][k])))
+##
+##            if dimensions[k][0] + dimensions[k1][1] > min_height:
+##                s.add(Or(Not(R[k]), R[k1], Not(UD[k][k1])))
+##                s.add(Or(Not(R[k]), R[k1], Not(UD[k1][k])))
+##
+##            if dimensions[k][0] + dimensions[k1][0] > min_height:
+##                s.add(Or(Not(R[k]), Not(R[k1]), Not(UD[k][k1])))
+##                s.add(Or(Not(R[k]), Not(R[k1]), Not(UD[k1][k])))
+
+
+##    hsymmcons = []                  #Horizontal symmetry breaking
+##    for k in range(nofrectangles):      
+##        hsymmcons.append([Not(i) for i in PX[k][0:width-dimensions[k][0]]])
+##        hsymmcons[-1]=hsymmcons[-1][::-1]
+##    PXH=[hsymmcons[k]+PX[k][width-dimensions[k][0]:] for k in range(nofrectangles)]
+##    s.add(Or(R[k],lex_order(flatten(PX),flatten(PXH),'hsymm')))
+##
+##    hsymmcons = []                  #Horizontal symmetry breaking
+##    for k in range(nofrectangles):      
+##        hsymmcons.append([Not(i) for i in PX[k][0:width-dimensions[k][1]]])
+##        hsymmcons[-1]=hsymmcons[-1][::-1]
+##    PXH=[hsymmcons[k]+PX[k][width-dimensions[k][1]:] for k in range(nofrectangles)]
+##    s.add(Or(Not(R[k]),lex_order(flatten(PX),flatten(PXH),'hsymm')))
+##
+##    vsymmcons=[]                    #Vertical symmetry breaking
+##    for k in range(nofrectangles):
+##        vsymmcons.append([Not(i) for i in PY[k][0:min_height-dimensions[k][1]]])
+##        vsymmcons[-1]=vsymmcons[-1][::-1]
+##    PYV=[vsymmcons[k]+PY[k][min_height-dimensions[k][1]:] for k in range(nofrectangles)]
+##    s.add(Or(R[k], lex_order(flatten(PY),flatten(PYV),'vsymm')))
+##
+##    vsymmcons=[]                    #Vertical symmetry breaking
+##    for k in range(nofrectangles):
+##        vsymmcons.append([Not(i) for i in PY[k][0:min_height-dimensions[k][0]]])
+##        vsymmcons[-1]=vsymmcons[-1][::-1]
+##    PYV=[vsymmcons[k]+PY[k][min_height-dimensions[k][0]:] for k in range(nofrectangles)]
+##    s.add(Or(Not(R[k]), lex_order(flatten(PY),flatten(PYV),'vsymm')))
                 
                     
     end_time=time.time()
     print('Model generated in', end_time - starting_time, 'seconds')
 
     #TIMEOUT:
-    s.set('timeout', 300000)
+    #s.set('timeout', 300000)
 
     check_result = s.check()
 
@@ -225,7 +286,7 @@ def adapt_solution(solutions_x, solutions_y, R) -> list[str]:
 
 
 
-def linear_optimization(width, nofrectangles, dimensions, max_height):
+def linear_optimization(width, nofrectangles, dimensions,max_height):
     
     total_area = 0
     
@@ -237,8 +298,8 @@ def linear_optimization(width, nofrectangles, dimensions, max_height):
     while True:
         print('Trying height =', min_height)
         testsol=sat_vlsi(width, nofrectangles, dimensions, min_height)
-        print(testsol[2])
         if testsol != None:
+            #print(testsol[2])
             return testsol
         min_height += 1
 
