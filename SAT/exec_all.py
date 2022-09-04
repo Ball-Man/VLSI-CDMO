@@ -13,7 +13,7 @@ import argparse
 
 
 from SAT_model import linear_optimization as sat_vlsi
-from SAT_model_rotations import sat_vlsi as sat_vlsi_rot
+from SAT_model_rotations import linear_optimization as sat_vlsi_rot
 from SAT_model_order import linear_optimization as sat_vlsi_ord
 from SAT_model_order_rotations import linear_optimization as sat_vlsi_ord_rot
 
@@ -33,14 +33,9 @@ def dump_result(instance_data, height, fp=sys.stdout):
 
 def dump_statistics(statistics, build_time, fp=sys.stdout):
     """Format statistics and dump it (json)."""
-    statistics_dict = {}
+    statistics['build_time'] = build_time
 
-    for key in statistics.keys():
-        statistics_dict[key] = statistics.get_key_value(key)
-
-    statistics_dict['build_time'] = build_time
-
-    json.dump(statistics_dict, fp, indent=4)
+    json.dump(statistics, fp, indent=4)
     
 
 def main(solve_func):
@@ -82,7 +77,8 @@ def main(solve_func):
 
         # Output results and statistics
         dump_result(instance_data, height)
-        print(statistics)
+        dump_statistics(statistics, build_time)
+        print()
 
         # Dump results and statistics on file
         os.makedirs(DEFAULT_OUTPUT_DIR, exist_ok=True)

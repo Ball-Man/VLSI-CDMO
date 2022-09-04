@@ -2,9 +2,16 @@
 from math import ceil
 
 
+def dict_from_stats(statistics) -> dict:
+    """Return a dictionary from z3 statistics."""
+    return {key: statistics.get_key_value(key) for key in statistics.keys()}
+
+
 def linear_optimization(solve_fun, width, nofrectangles, dimensions,
-                        max_height):
+                        max_height, timeout=300000):
     """Apply linear optimization to solve_fun, passing other parameters."""
+    total_solve_time = 0
+    total_build_time = 0
 
     total_area = 0
 
@@ -17,14 +24,29 @@ def linear_optimization(solve_fun, width, nofrectangles, dimensions,
 
     while True:
         # print('Trying height =', min_height)
-        testsol = solve_fun(width, nofrectangles, dimensions, min_height)
-        if testsol != None:
-            return testsol
+        testsol = solve_fun(width, nofrectangles, dimensions, min_height,
+                            timeout=timeout)
+
+        # Update timeout based on passed time
+        sol_height, solutions, stats, build_time = testsol
+        solve_time = stats.get_key_value('time')
+        total_build_time += build_time
+        total_solve_time += solve_time
+        timeout -= (solve_time + build_time) * 1000
+
+        if testsol is not None:
+            # Return cumulative times
+            # Last solution statistics are returned, but time value is
+            # replaced by its cumulative
+            stats_dict = dict_from_stats(stats)
+            stats_dict['time'] = total_solve_time
+            return sol_height, solutions, stats_dict, total_build_time
+
         min_height += 1
 
 
 def binary_optimization(solve_fun, width, nofrectangles, dimensions,
-                        max_height):
+                        max_height, timeout=300000):
     """Apply binary optimization to solve_fun, passing other parameters."""
 
     total_area = 0
@@ -44,7 +66,7 @@ def binary_optimization(solve_fun, width, nofrectangles, dimensions,
         testsol = solve_fun(width, nofrectangles, dimensions,
                             (min_height + max_height) // 2)
         #print(A[2])
-        if testsol == None:
+        if testsol is None:
             min_height = ((min_height + max_height) // 2) + 1
         else:
             # testsol1 keeps track of the last correct solution so it

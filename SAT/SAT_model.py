@@ -75,7 +75,7 @@ def vperm(A,min_height,dimensions):
 ####################################################################################################
 
 
-def sat_vlsi(width, nofrectangles, dimensions, min_height): #dimensions è una lista di coppie di coordinate [x,y]
+def sat_vlsi(width, nofrectangles, dimensions, min_height, timeout=300000): #dimensions è una lista di coppie di coordinate [x,y]
 
     s = Solver()
     
@@ -133,7 +133,7 @@ def sat_vlsi(width, nofrectangles, dimensions, min_height): #dimensions è una l
     print('Model generated in', end_time - starting_time, 'seconds')
 
     #TIMEOUT:
-    s.set('timeout', 300000)
+    s.set('timeout', timeout)
 
     check_result = s.check()
 
