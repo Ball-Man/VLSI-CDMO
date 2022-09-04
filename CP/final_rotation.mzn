@@ -80,7 +80,9 @@ constraint symmetry_breaking_constraint(lex_lesseq(
 constraint symmetry_breaking_constraint(
   forall (i in 1..n, j in 1..n where i < j) (
     if var_circuits[i, 0] == var_circuits[j, 0]
-       /\ var_circuits[i, 1] == var_circuits[j, 1] then
+       /\ var_circuits[i, 1] == var_circuits[j, 1]
+       \/ var_circuits[i, 0] == var_circuits[j, 1]
+       /\ var_circuits[j, 0] == var_circuits[i, 1] then
       lex_lesseq([positions_x[i], positions_y[i]],
                  [positions_x[j], positions_y[j]])
     endif
