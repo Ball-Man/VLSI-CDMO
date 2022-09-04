@@ -26,7 +26,8 @@ def dump_statistics(statistics, status, fp=sys.stdout):
     # Make time serializable
     time_keys = 'flatTime', 'time', 'solveTime', 'initTime', 'optTime'
     for key in time_keys:
-        statistics[key] = str(statistics[key])
+        if key in statistics:
+            statistics[key] = str(statistics[key])
 
     json.dump(statistics, fp, indent=4)
 
