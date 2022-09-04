@@ -42,6 +42,9 @@ def linear_optimization(solve_fun, width, nofrectangles, dimensions,
             stats_dict['time'] = total_solve_time
             return sol_height, solutions, stats_dict, total_build_time
 
+        if timeout < 0:
+            return None
+
         min_height += 1
 
 
