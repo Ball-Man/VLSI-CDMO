@@ -139,7 +139,7 @@ def solve(width, n, circuits, max_height=-1, name="rotation", solver="PULP_CBC_C
     model.solve(pl.getSolver(solver, timeLimit=time_limit))
 
     if export_file is not None:
-        model.writeLP(export_file+".lp")
+        model.writeMPS(export_file)
         print(f"Model exported in {export_file}")
     
     rect = _format_solution(circuits, n, x, y, r)
