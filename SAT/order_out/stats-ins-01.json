@@ -1,0 +1,16 @@
+{
+    "sat mk clause 2ary": 196,
+    "sat mk clause 3ary": 8,
+    "sat mk clause nary": 6,
+    "sat mk var": 66,
+    "sat decisions": 4,
+    "sat propagations 2ary": 41,
+    "sat propagations nary": 6,
+    "sat units": 14,
+    "num allocs": 289329,
+    "rlimit count": 4496,
+    "max memory": 19.28,
+    "memory": 19.14,
+    "time": 0.005,
+    "build_time": 0.016870737075805664
+}
