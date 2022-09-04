@@ -1,10 +1,12 @@
 from z3 import *
 from itertools import combinations
+from functools import partial
 import time
 from math import sqrt
 from math import ceil
 
-#Cardinality constraints
+import util
+
 
 def at_least_one(bool_vars):
     return Or(bool_vars)
@@ -73,7 +75,7 @@ def vperm(A,min_height,dimensions):
 ####################################################################################################
 
 
-def sat_vlsi(width, nofrectangles, dimensions, min_height): #dimensions è una lista di coppie di coordinate [x,y]
+def sat_vlsi(width, nofrectangles, dimensions, min_height, timeout=300000): #dimensions è una lista di coppie di coordinate [x,y]
 
     s = Solver()
     
@@ -131,7 +133,7 @@ def sat_vlsi(width, nofrectangles, dimensions, min_height): #dimensions è una l
     print('Model generated in', end_time - starting_time, 'seconds')
 
     #TIMEOUT:
-    s.set('timeout', 300000)
+    s.set('timeout', timeout)
 
     check_result = s.check()
 
@@ -143,63 +145,10 @@ def sat_vlsi(width, nofrectangles, dimensions, min_height): #dimensions è una l
         return min_height, solutions, s.statistics(), end_time - starting_time
 
     # If unsatisfiable
-    return None
-
-def linear_optimization(width,nofrectangles,dimensions, max_height):
-
-    total_area = 0
-    
-    for i in range(nofrectangles):
-        total_area += dimensions[i][0] * dimensions[i][1]
-        
-    min_height = max(ceil(total_area / width), max([dimensions[i][1] for i in range(nofrectangles)]))        #If total area is not divisible by width we round up
-
-    while True:
-        print('Trying height =', min_height)
-        A=sat_vlsi(width, nofrectangles, dimensions, min_height)
-        print(A[2])
-        if A != None:
-            return A
-        min_height += 1
-
-def binary_optimization(width, nofrectangles, dimensions, max_height):
-    
-    total_area = 0
-    
-    for i in range(nofrectangles):
-        total_area += dimensions[i][0] * dimensions[i][1]
-        
-    min_height = max(ceil(total_area / width), max([dimensions[i][1] for i in range(nofrectangles)]))
-    max_height = sum([dimensions[k][1] for k in range(nofrectangles)])
-
-    while min_height != max_height:
-        print('Trying height =', (min_height + max_height) // 2)
-        A = sat_vlsi(width,nofrectangles, dimensions, (min_height + max_height) // 2)
-        #print(A[2])
-        if A == None:
-            min_height = ((min_height + max_height) // 2) + 1
-        else:
-            B = A   #B keeps track of the last correct solution so it can be returned without recomputing sat_vlsi if in the last iteration A == None
-            max_height = (min_height + max_height) // 2
-
-    return B
+    return None, None, s.statistics(), end_time - starting_time
 
 
-
-#FOR TESTING PURPOSE:
-##width=8
-##nofrectangles=4
-##dimensions=[[3,3],[3,5],[5,3],[5,5]]
-##min_height=8
-##X = [[[Bool(f'x_{i}_{j}_{k}') for i in range(width - dimensions[k][0] + 1)] for j in range(min_height - dimensions[k][1] + 1)] for k in range(nofrectangles)]
+linear_optimization = partial(util.linear_optimization, sat_vlsi)
 
 
-        
-
-
-
-
-
-
-
-
+binary_optimization = partial(util.binary_optimization, sat_vlsi)

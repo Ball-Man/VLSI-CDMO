@@ -20,12 +20,11 @@ array[1..n, 0..1] of var int: var_circuits;
 Minimum height is given by the max between the highest (or widest, taking
 rotations into account) given circuit and the
 the minimal bounding box height (total area divided by width).
-Maximum height is given by the sum of all the maximal dimensions (assuming
-we always rotate the chips so that the longest side is used as height).
+Maximum height is given by a first fit approximation
 */
 int: min_circuit_side = min(col(circuits, 0) ++ col(circuits, 1));
 int: max_circuit_side = max(col(circuits, 0) ++ col(circuits, 1));
-int: max_height = sum([max(row(circuits, i))| i in 1..n]);
+int: max_height;
 int: min_height = max([sum(areas) div width, max_circuit_side]);
 
 var min_height..max_height: height;
@@ -80,9 +79,20 @@ constraint symmetry_breaking_constraint(lex_lesseq(
 constraint symmetry_breaking_constraint(
   forall (i in 1..n, j in 1..n where i < j) (
     if var_circuits[i, 0] == var_circuits[j, 0]
-       /\ var_circuits[i, 1] == var_circuits[j, 1] then
+       /\ var_circuits[i, 1] == var_circuits[j, 1]
+       \/ var_circuits[i, 0] == var_circuits[j, 1]
+       /\ var_circuits[j, 0] == var_circuits[i, 1] then
       lex_lesseq([positions_x[i], positions_y[i]],
                  [positions_x[j], positions_y[j]])
+    endif
+  )
+);
+
+% Square circuits do not need to be rotated
+constraint symmetry_breaking_constraint(
+  forall (i in 1..n) (
+    if circuits[i, 0] == circuits[i, 1] then
+      rotated[i] = false
     endif
   )
 );

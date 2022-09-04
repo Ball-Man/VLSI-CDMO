@@ -1,17 +1,13 @@
 from z3 import *
 from itertools import combinations
+from functools import partial
+import re
 import time
 from math import sqrt
 from math import ceil
 
-import re
-import sys
-import glob
-import json
-import datetime
-import os
-import os.path as pt
-import argparse
+import util
+
 
 VARIABLE_RE = re.compile(r'p[xy]_(\d+)_(\d+)')
 
@@ -65,7 +61,7 @@ def flatten(l):
 ####################################################################################################
 
 
-def sat_vlsi(width, nofrectangles, dimensions, min_height): #dimensions è una lista di coppie di coordinate [x,y]
+def sat_vlsi(width, nofrectangles, dimensions, min_height, timeout=300000): #dimensions è una lista di coppie di coordinate [x,y]
     
     s = Solver()
 
@@ -148,28 +144,45 @@ def sat_vlsi(width, nofrectangles, dimensions, min_height): #dimensions è una l
                 s.add(Not(UD[k][k1]))
                 s.add(Not(UD[k1][k]))
 
+    #instead of adding symmetry breaking for the model with rotations, we just constraint the biggest
+    #circuit to be in the left-bottom part of the region of its possible positions. DO NOT USE WITH LEX_ORDER SYMMETRY-BREAKING
 
-    hsymmcons = []                  #Horizontal symmetry breaking
-    for k in range(nofrectangles):      
-        hsymmcons.append([Not(i) for i in PX[k][0:width-dimensions[k][0]]])
-        hsymmcons[-1]=hsymmcons[-1][::-1]
-    PXH=[hsymmcons[k]+PX[k][width-dimensions[k][0]:] for k in range(nofrectangles)]
-    # print(PX, PXH)
-    s.add(lex_order(flatten(PX),flatten(PXH),'hsymm'))
 
-    vsymmcons=[]                    #Vertical symmetry breaking
-    for k in range(nofrectangles):
-        vsymmcons.append([Not(i) for i in PY[k][0:min_height-dimensions[k][1]]])
-        vsymmcons[-1]=vsymmcons[-1][::-1]
-    PYV=[vsymmcons[k]+PY[k][min_height-dimensions[k][1]:] for k in range(nofrectangles)]
-    s.add(lex_order(flatten(PY),flatten(PYV),'vsymm'))
+    #Maybe it is best to consider the smallest rectangle instead? There is more "information gain" I think
+
+##    maxdimension=max(max(dimensions[k] for k in range(nofrectangles)))
+##    indexmaxdimension=[k for k in range(nofrectangles) if maxdimension in dimensions[k]][0]
+    mindimension=min(min(dimensions[k] for k in range(nofrectangles)))
+    indexmindimension=[k for k in range(nofrectangles) if mindimension in dimensions[k]][0]
     
-                    
+##    s.add(PX[indexmaxdimension][(width-dimensions[indexmaxdimension][0])//2])
+##    s.add(PY[indexmaxdimension][(min_height - dimensions[indexmaxdimension][1])//2])
+    s.add(PX[indexmindimension][(width-dimensions[indexmindimension][0])//2])
+    s.add(PY[indexmindimension][(min_height - dimensions[indexmindimension][1])//2])
+
+##    hsymm = []                  #Horizontal symmetry breaking
+##    px=[]
+##    for k in range(nofrectangles):      
+##        hsymmcons=[Not(i) for i in PX[k][0:width-dimensions[k][0]]]
+##        hsymmcons=hsymmcons[::-1]
+##        hsymm+=hsymmcons
+##        px+=PX[k][0:width-dimensions[k][0]]
+##    s.add(lex_order(hsymm,px ,'hsymm'))
+##
+##    vsymm=[]                     #Vertical symmetry breaking
+##    py=[]                      
+##    for k in range(nofrectangles):
+##        vsymmcons=[Not(i) for i in PY[k][0:min_height-dimensions[k][1]]]
+##        vsymmcons=vsymmcons[::-1]
+##        vsymm+=vsymmcons
+##        py+=PY[k][0:min_height-dimensions[k][1]]
+##    s.add(lex_order(vsymm,py,'vsymm'))
+
     end_time=time.time()
     print('Model generated in', end_time - starting_time, 'seconds')
 
     #TIMEOUT:
-    #s.set('timeout', 300000)
+    s.set('timeout', timeout)
 
     check_result = s.check()
 
@@ -185,7 +198,7 @@ def sat_vlsi(width, nofrectangles, dimensions, min_height): #dimensions è una l
 
     # If unsatisfiable
     print(s.statistics())
-    return None
+    return None, None, s.statistics(), end_time - starting_time
 
 
 def adapt_solution(solutions_x, solutions_y) -> list[str]:
@@ -204,80 +217,7 @@ def adapt_solution(solutions_x, solutions_y) -> list[str]:
     return new_solutions
 
 
-
-def linear_optimization(width, nofrectangles, dimensions, max_height):
-    
-    total_area = 0
-    
-    for i in range(nofrectangles):
-        total_area += dimensions[i][0] * dimensions[i][1]
-        
-    min_height = max(ceil(total_area / width), max([dimensions[i][1] for i in range(nofrectangles)]))        #If total area is not divisible by width we round up
-
-    while True:
-        print('Trying height =', min_height)
-        testsol=sat_vlsi(width, nofrectangles, dimensions, min_height)
-        if testsol != None:
-            return testsol
-        min_height += 1
+linear_optimization = partial(util.linear_optimization, sat_vlsi)
 
 
-def binary_optimization(width, nofrectangles, dimensions, max_height):
-    
-    total_area = 0
-    
-    for i in range(nofrectangles):
-        total_area += dimensions[i][0] * dimensions[i][1]
-        
-    min_height = max(ceil(total_area / width), max([dimensions[i][1] for i in range(nofrectangles)]))
-    #max_height = sum([dimensions[k][1] for k in range(nofrectangles)])
-
-    if min_height == max_height:
-        return sat_vlsi(width,nofrectangles, dimensions, min_height)
-
-    while min_height != max_height:
-        print('Trying height =', (min_height + max_height) // 2)
-        testsol = sat_vlsi(width,nofrectangles, dimensions, (min_height + max_height) // 2)
-        #print(A[2])
-        if testsol == None:
-            min_height = ((min_height + max_height) // 2) + 1
-        else:
-            testsol1 = testsol   #testsol1 keeps track of the last correct solution so it can be returned without recomputing sat_vlsi if in the last iteration A == None
-            max_height = (min_height + max_height) // 2
-
-    return testsol1
-    
-        
-    
-
-
-        
-    
-    
-
-#FOR TESTING PURPOSE:
-#Questa è l'istanza 30
-##width=37
-##nofrectangles=27
-##dimensions=[[3,3],[3,4],[3,5],[3,6],[3,7],[3,8],[3,9],[3,11],[3,12],[3,13],[3,14],[3,17],[3,18],[3,21],[4,3],[4,4],[4,5],[4,6],[4,10],[4,22],[4,24],[5,3],[5,4],[5,6],[5,10],[5,14],[12,37]]
-##X = [[[Bool(f'x_{i}_{j}_{k}') for i in range(width - dimensions[k][0] + 1)] for j in range(min_height - dimensions[k][1] + 1)] for k in range(nofrectangles)]
-
-##sat_vlsi(width,nofrectangles,dimensions,37)
-# DEFAULT_INSTANCES_DIR = pt.join(pt.dirname(__file__), '..', 'instances_json')
-
-# with open(sorted(
-#             glob.glob(pt.join(DEFAULT_INSTANCES_DIR, '*')))[-1]) as fin:
-#     instance_data = json.load(fin)
-
-#     sat_vlsi(instance_data['width'], instance_data['n'],
-#                                    instance_data['circuits'])
-
-        
-
-
-
-
-
-
-
-
+binary_optimization = partial(util.binary_optimization, sat_vlsi)

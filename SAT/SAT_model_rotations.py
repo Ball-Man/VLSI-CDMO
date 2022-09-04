@@ -1,14 +1,14 @@
 import time
 from itertools import combinations
+from functools import partial
 
 from z3 import *
+import util
 
-#Generic cardinality constraints
-#IMPORTANTE: Provare altri encodings (questi sono i "sequential" encoding, O(n) clauses
-#Per ora sto provando a verificare la satisfiability con la min_height, idealmente Height dovrebbe essere una variabile
 
 def at_least_one(bool_vars):
     return Or(bool_vars)
+
 
 def at_most_one(bool_vars, name):
     constraints = []
@@ -21,6 +21,7 @@ def at_most_one(bool_vars, name):
         constraints.append(Or(Not(bool_vars[i]), Not(s[i-1])))
         constraints.append(Or(Not(s[i-1]), s[i]))
     return And(constraints)
+
 
 def equal_vars(var1,var2): #boolean variables are equal iff they are equivalent
     return And(Or(Not(var1),var2),Or(Not(var2),var1))
@@ -47,6 +48,7 @@ def lex_order(listvar1,listvar2,name):  #lex_order_CSE
         constraints.append(Or(Not(s[i]),(Or(Not(listvar2[i+1]),listvar1[i+1]))))
     return And(constraints)
 
+
 def exactly_one(bool_vars, name):
     return And(at_least_one(bool_vars), at_most_one(bool_vars, name))
 ####################################################################################################
@@ -55,45 +57,17 @@ def exactly_one(bool_vars, name):
 def flatten(l):
     return [item for sublist in l for item in sublist]
 
+
 def hperm(A,width,dimensions): #symmetries
     return [[[A[k][j][width - i - dimensions[k][0]] for i in range(len(A[k][j]))] for j in range(len(A[k]))] for k in range(len(A))]
+
 
 def vperm(A,min_height,dimensions):
     return [[[A[k][min_height - j - dimensions[k][1]][i] for i in range(len(A[k][j]))] for j in range(len(A[k]))] for k in range(len(A))]
 ####################################################################################################
-
-#THIS HAS BECOME UNNECESSARY
-##def apply_rotations(width, nofrectangles, dimensions):
-##    s=Solver()
-##    Rotated = [Bool(f'rotated_{k}') for k in range(nofrectangles)]
-##    for k in range(nofrectangles):  #square rectangles and rectangles with height greater than the max width won't be rotated
-##        if dimensions[k][0] == dimensions[k][1] or dimensions[k][1] > width:
-##            s.add(Not(Rotated[k]))
-##    while(True):
-##        check_result = s.check()
-##        if check_result == sat:
-##            m=s.model()
-##            actual_dimensions=[]
-##            for k in range(nofrectangles):
-##                if m.evaluate(Rotated[k]) == True:
-##                    actual_dimensions.append(dimensions[k][::-1])
-##                else:
-##                    actual_dimensions.append(dimensions[k])
-##            a= sat_vlsi(width, nofrectangles, actual_dimensions)
-##            if a != None:
-##                return a
-##            formulas=[]
-##            for k in range(nofrectangles):
-##                if m.evaluate(Rotated[k]) == True:
-##                    formulas.append(Rotated[k])
-##                else:
-##                    formulas.append(Not(Rotated[k]))
-##            formula = And(formulas)
-##            s.add(Not(formula))
-##    return "unsat"
                 
         
-def sat_vlsi(width, nofrectangles, dimensions, max_height): #dimensions è una lista di coppie di coordinate [x,y]
+def sat_vlsi(width, nofrectangles, dimensions, max_height, timeout=300000): #dimensions è una lista di coppie di coordinate [x,y]
 
     s = Solver()
 
@@ -163,6 +137,9 @@ def sat_vlsi(width, nofrectangles, dimensions, max_height): #dimensions è una l
                                 
     end_time=time.time()
     print('Model generated in', end_time - starting_time, 'seconds')
+
+    s.set('timeout', timeout)
+
     check_result = s.check()
 
     # If satisfiable
@@ -176,7 +153,10 @@ def sat_vlsi(width, nofrectangles, dimensions, max_height): #dimensions è una l
         return min_height, solutions, s.statistics(), end_time - starting_time
 
     # If unsatisfiable
-    return None
+    return None, None, s.statistics(), end_time - starting_time
 
 
+linear_optimization = partial(util.linear_optimization, sat_vlsi)
 
+
+binary_optimization = partial(util.binary_optimization, sat_vlsi)

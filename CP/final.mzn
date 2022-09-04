@@ -11,9 +11,9 @@ array[1..n] of int: areas = [circuits[i, 0] * circuits[i, 1]| i in 1..n];
 /*
 Minimum height is given by the max between the highest given circuit and the
 the minimal bounding box height (total area divided by width).
-Maximum height is given by the sum of all the heights of the given circuits.
+Maximum height is given by a first fit approximation.
 */
-int: max_height = sum(col(circuits, 1));
+int: max_height;
 int: min_height = max([sum(areas) div width, max(col(circuits, 1))]);
 
 var min_height..max_height: height;
