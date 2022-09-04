@@ -158,18 +158,11 @@ def sat_vlsi(width, nofrectangles, dimensions, min_height): #dimensions è una l
 ##    indexmaxdimension=[k for k in range(nofrectangles) if maxdimension in dimensions[k]][0]
     mindimension=min(min(dimensions[k] for k in range(nofrectangles)))
     indexmindimension=[k for k in range(nofrectangles) if mindimension in dimensions[k]][0]
-
-
-    
     
 ##    s.add(PX[indexmaxdimension][(width-dimensions[indexmaxdimension][0])//2])
 ##    s.add(PY[indexmaxdimension][(min_height - dimensions[indexmaxdimension][1])//2])
     s.add(PX[indexmindimension][(width-dimensions[indexmindimension][0])//2])
     s.add(PY[indexmindimension][(min_height - dimensions[indexmindimension][1])//2])
-
-    
-
-    
 
 ##    hsymm = []                  #Horizontal symmetry breaking
 ##    px=[]
@@ -188,8 +181,7 @@ def sat_vlsi(width, nofrectangles, dimensions, min_height): #dimensions è una l
 ##        vsymm+=vsymmcons
 ##        py+=PY[k][0:min_height-dimensions[k][1]]
 ##    s.add(lex_order(vsymm,py,'vsymm'))
-    
-                    
+
     end_time=time.time()
     print('Model generated in', end_time - starting_time, 'seconds')
 
@@ -271,38 +263,3 @@ def binary_optimization(width, nofrectangles, dimensions, max_height):
             max_height = (min_height + max_height) // 2
 
     return testsol1
-    
-        
-    
-
-
-        
-    
-    
-
-#FOR TESTING PURPOSE:
-#Questa è l'istanza 30
-##width=37
-##nofrectangles=27
-##dimensions=[[3,3],[3,4],[3,5],[3,6],[3,7],[3,8],[3,9],[3,11],[3,12],[3,13],[3,14],[3,17],[3,18],[3,21],[4,3],[4,4],[4,5],[4,6],[4,10],[4,22],[4,24],[5,3],[5,4],[5,6],[5,10],[5,14],[12,37]]
-##X = [[[Bool(f'x_{i}_{j}_{k}') for i in range(width - dimensions[k][0] + 1)] for j in range(min_height - dimensions[k][1] + 1)] for k in range(nofrectangles)]
-
-##sat_vlsi(width,nofrectangles,dimensions,37)
-# DEFAULT_INSTANCES_DIR = pt.join(pt.dirname(__file__), '..', 'instances_json')
-
-# with open(sorted(
-#             glob.glob(pt.join(DEFAULT_INSTANCES_DIR, '*')))[-1]) as fin:
-#     instance_data = json.load(fin)
-
-#     sat_vlsi(instance_data['width'], instance_data['n'],
-#                                    instance_data['circuits'])
-
-        
-
-
-
-
-
-
-
-

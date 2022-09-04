@@ -183,23 +183,3 @@ def binary_optimization(width, nofrectangles, dimensions, max_height):
             max_height = (min_height + max_height) // 2
 
     return B
-
-
-
-#FOR TESTING PURPOSE:
-##width=8
-##nofrectangles=4
-##dimensions=[[3,3],[3,5],[5,3],[5,5]]
-##min_height=8
-##X = [[[Bool(f'x_{i}_{j}_{k}') for i in range(width - dimensions[k][0] + 1)] for j in range(min_height - dimensions[k][1] + 1)] for k in range(nofrectangles)]
-
-
-        
-
-
-
-
-
-
-
-

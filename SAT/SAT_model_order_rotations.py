@@ -38,8 +38,10 @@ def equal_vars(var1,var2): #boolean variables are equal iff they are equivalent
     return And(Or(Not(var1),var2),Or(Not(var2),var1))
 ##
 
+
 def identity(x):
     return x
+
 
 def lex_order(listvar1,listvar2,name, func = identity):  #lex_order_CSE
     constraints=[]
@@ -354,41 +356,3 @@ def binary_optimization(width, nofrectangles, dimensions, max_height):
             max_height = (min_height + max_height) // 2
 
     return testsol1
-
-
-    
-        
-    
-
-
-        
-    
-    
-
-#FOR TESTING PURPOSE:
-#Questa è l'istanza 30
-#width=37
-#nofrectangles=27
-#dimensions=[[3,3],[3,4],[3,5],[3,6],[3,7],[3,8],[3,9],[3,11],[3,12],[3,13],[3,14],[3,17],[3,18],[3,21],[4,3],[4,4],[4,5],[4,6],[4,10],[4,22],[4,24],[5,3],[5,4],[5,6],[5,10],[5,14],[12,37]]
-##X = [[[Bool(f'x_{i}_{j}_{k}') for i in range(width - dimensions[k][0] + 1)] for j in range(min_height - dimensions[k][1] + 1)] for k in range(nofrectangles)]
-
-# DEFAULT_INSTANCES_DIR = pt.join(pt.dirname(__file__), '..', 'instances_json')
-
-# with open(sorted(
-#             glob.glob(pt.join(DEFAULT_INSTANCES_DIR, '*')))[-1]) as fin:
-#     instance_data = json.load(fin)
-
-#     sat_vlsi(instance_data['width'], instance_data['n'],
-#                                    instance_data['circuits'])
-# width = 8
-# nofrectangles=4
-# dimensions=[[3,3],[5,3],[3,5],[5,5]]
-        
-# print(sat_vlsi(width, nofrectangles,dimensions, 8))
-
-
-
-
-
-
-
