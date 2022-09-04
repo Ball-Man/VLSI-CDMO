@@ -153,7 +153,7 @@ def sat_vlsi(width, nofrectangles, dimensions, max_height, timeout=300000): #dim
         return min_height, solutions, s.statistics(), end_time - starting_time
 
     # If unsatisfiable
-    return None
+    return None, None, s.statistics(), build_time
 
 
 linear_optimization = partial(util.linear_optimization, sat_vlsi)

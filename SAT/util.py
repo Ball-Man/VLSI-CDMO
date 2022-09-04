@@ -34,13 +34,16 @@ def linear_optimization(solve_fun, width, nofrectangles, dimensions,
         total_solve_time += solve_time
         timeout -= (solve_time + build_time) * 1000
 
-        if testsol is not None:
+        if testsol[0] is not None:
             # Return cumulative times
             # Last solution statistics are returned, but time value is
             # replaced by its cumulative
             stats_dict = dict_from_stats(stats)
             stats_dict['time'] = total_solve_time
             return sol_height, solutions, stats_dict, total_build_time
+
+        if timeout < 0:
+            return None
 
         min_height += 1
 
