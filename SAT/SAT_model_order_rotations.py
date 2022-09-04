@@ -244,7 +244,7 @@ def sat_vlsi(width, nofrectangles, dimensions, min_height): #dimensions è una l
     print('Model generated in', end_time - starting_time, 'seconds')
 
     #TIMEOUT:
-    #s.set('timeout', 300000)
+    s.set('timeout', 300000)
 
     check_result = s.check()
 
