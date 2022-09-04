@@ -178,66 +178,66 @@ def sat_vlsi(width, nofrectangles, dimensions, min_height): #dimensions è una l
                 if len(DR) > 2:
                     s.add(Or(DR))
 
-##            if dimensions[k][0] + dimensions[k1][0] > width:        #if the sum of horizontal (vertical) sizes of circuits exceeds the max width (height),
-##                s.add(Or(R[k],R[k1], Not(LR[k][k1])))               #then they can't be left or right (above or below) each other
-##                s.add(Or(R[k],R[k1], Not(LR[k1][k])))
-##
-##            if dimensions[k][0] + dimensions[k1][1] > width:
-##                s.add(Or(R[k], Not(R[k1]), Not(LR[k][k1])))
-##                s.add(Or(R[k], Not(R[k1]), Not(LR[k1][k])))
-##
-##            if dimensions[k][1] + dimensions[k1][0] > width:
-##                s.add(Or(Not(R[k]), R[k1], Not(LR[k][k1])))
-##                s.add(Or(Not(R[k]), R[k1], Not(LR[k1][k])))
-##
-##            if dimensions[k][1] + dimensions[k1][1] > width:
-##                s.add(Or(Not(R[k]), Not(R[k1]), Not(LR[k][k1])))
-##                s.add(Or(Not(R[k]), Not(R[k1]), Not(LR[k1][k])))
-##
-##            if dimensions[k][1] + dimensions[k1][1] > min_height:
-##                s.add(Or(R[k], R[k1], Not(UD[k][k1])))
-##                s.add(Or(R[k], R[k1], Not(UD[k1][k])))
-##
-##            if dimensions[k][1] + dimensions[k1][0] > min_height:
-##                s.add(Or(R[k], Not(R[k1]), Not(UD[k][k1])))
-##                s.add(Or(R[k], Not(R[k1]), Not(UD[k1][k])))
-##
-##            if dimensions[k][0] + dimensions[k1][1] > min_height:
-##                s.add(Or(Not(R[k]), R[k1], Not(UD[k][k1])))
-##                s.add(Or(Not(R[k]), R[k1], Not(UD[k1][k])))
-##
-##            if dimensions[k][0] + dimensions[k1][0] > min_height:
-##                s.add(Or(Not(R[k]), Not(R[k1]), Not(UD[k][k1])))
-##                s.add(Or(Not(R[k]), Not(R[k1]), Not(UD[k1][k])))
+            if dimensions[k][0] + dimensions[k1][0] > width:        #if the sum of horizontal (vertical) sizes of circuits exceeds the max width (height),
+                s.add(Or(R[k],R[k1], Not(LR[k][k1])))               #then they can't be left or right (above or below) each other
+                s.add(Or(R[k],R[k1], Not(LR[k1][k])))
+
+            if dimensions[k][0] + dimensions[k1][1] > width:
+                s.add(Or(R[k], Not(R[k1]), Not(LR[k][k1])))
+                s.add(Or(R[k], Not(R[k1]), Not(LR[k1][k])))
+
+            if dimensions[k][1] + dimensions[k1][0] > width:
+                s.add(Or(Not(R[k]), R[k1], Not(LR[k][k1])))
+                s.add(Or(Not(R[k]), R[k1], Not(LR[k1][k])))
+
+            if dimensions[k][1] + dimensions[k1][1] > width:
+                s.add(Or(Not(R[k]), Not(R[k1]), Not(LR[k][k1])))
+                s.add(Or(Not(R[k]), Not(R[k1]), Not(LR[k1][k])))
+
+            if dimensions[k][1] + dimensions[k1][1] > min_height:
+                s.add(Or(R[k], R[k1], Not(UD[k][k1])))
+                s.add(Or(R[k], R[k1], Not(UD[k1][k])))
+
+            if dimensions[k][1] + dimensions[k1][0] > min_height:
+                s.add(Or(R[k], Not(R[k1]), Not(UD[k][k1])))
+                s.add(Or(R[k], Not(R[k1]), Not(UD[k1][k])))
+
+            if dimensions[k][0] + dimensions[k1][1] > min_height:
+                s.add(Or(Not(R[k]), R[k1], Not(UD[k][k1])))
+                s.add(Or(Not(R[k]), R[k1], Not(UD[k1][k])))
+
+            if dimensions[k][0] + dimensions[k1][0] > min_height:
+                s.add(Or(Not(R[k]), Not(R[k1]), Not(UD[k][k1])))
+                s.add(Or(Not(R[k]), Not(R[k1]), Not(UD[k1][k])))
 
 
-##    hsymmcons = []                  #Horizontal symmetry breaking
-##    for k in range(nofrectangles):      
-##        hsymmcons.append([Not(i) for i in PX[k][0:width-dimensions[k][0]]])
-##        hsymmcons[-1]=hsymmcons[-1][::-1]
-##    PXH=[hsymmcons[k]+PX[k][width-dimensions[k][0]:] for k in range(nofrectangles)]
-##    s.add(Or(R[k],lex_order(flatten(PX),flatten(PXH),'hsymm')))
-##
-##    hsymmcons = []                  #Horizontal symmetry breaking
-##    for k in range(nofrectangles):      
-##        hsymmcons.append([Not(i) for i in PX[k][0:width-dimensions[k][1]]])
-##        hsymmcons[-1]=hsymmcons[-1][::-1]
-##    PXH=[hsymmcons[k]+PX[k][width-dimensions[k][1]:] for k in range(nofrectangles)]
-##    s.add(Or(Not(R[k]),lex_order(flatten(PX),flatten(PXH),'hsymm')))
-##
-##    vsymmcons=[]                    #Vertical symmetry breaking
-##    for k in range(nofrectangles):
-##        vsymmcons.append([Not(i) for i in PY[k][0:min_height-dimensions[k][1]]])
-##        vsymmcons[-1]=vsymmcons[-1][::-1]
-##    PYV=[vsymmcons[k]+PY[k][min_height-dimensions[k][1]:] for k in range(nofrectangles)]
-##    s.add(Or(R[k], lex_order(flatten(PY),flatten(PYV),'vsymm')))
-##
-##    vsymmcons=[]                    #Vertical symmetry breaking
-##    for k in range(nofrectangles):
-##        vsymmcons.append([Not(i) for i in PY[k][0:min_height-dimensions[k][0]]])
-##        vsymmcons[-1]=vsymmcons[-1][::-1]
-##    PYV=[vsymmcons[k]+PY[k][min_height-dimensions[k][0]:] for k in range(nofrectangles)]
-##    s.add(Or(Not(R[k]), lex_order(flatten(PY),flatten(PYV),'vsymm')))
+    hsymmconsnr = []                  #Horizontal symmetry breaking
+    for k in range(nofrectangles):      
+        hsymmconsnr.append([Not(i) for i in PX[k][0:width-dimensions[k][0]]])
+        hsymmconsnr[-1]=hsymmconsnr[-1][::-1]
+    PXHNR=[hsymmconsnr[k]+PX[k][width-dimensions[k][0]:] for k in range(nofrectangles)]
+    s.add(Or(R[k],lex_order(flatten(PX),flatten(PXHNR),'hsymmnr')))
+
+    hsymmconsr = []                  #Horizontal symmetry breaking
+    for k in range(nofrectangles):      
+        hsymmconsr.append([Not(i) for i in PX[k][0:width-dimensions[k][1]]])
+        hsymmconsr[-1]=hsymmconsr[-1][::-1]
+    PXHR=[hsymmconsr[k]+PX[k][width-dimensions[k][1]:] for k in range(nofrectangles)]
+    s.add(Or(Not(R[k]),lex_order(flatten(PX),flatten(PXHR),'hsymmr')))
+
+    vsymmconsnr=[]                    #Vertical symmetry breaking
+    for k in range(nofrectangles):
+        vsymmconsnr.append([Not(i) for i in PY[k][0:min_height-dimensions[k][1]]])
+        vsymmconsnr[-1]=vsymmconsnr[-1][::-1]
+    PYVNR=[vsymmconsnr[k]+PY[k][min_height-dimensions[k][1]:] for k in range(nofrectangles)]
+    s.add(Or(R[k], lex_order(flatten(PY),flatten(PYVNR),'vsymmnr')))
+
+    vsymmconsr=[]                    #Vertical symmetry breaking
+    for k in range(nofrectangles):
+        vsymmconsr.append([Not(i) for i in PY[k][0:min_height-dimensions[k][0]]])
+        vsymmconsr[-1]=vsymmconsr[-1][::-1]
+    PYVR=[vsymmconsr[k]+PY[k][min_height-dimensions[k][0]:] for k in range(nofrectangles)]
+    s.add(Or(Not(R[k]), lex_order(flatten(PY),flatten(PYVR),'vsymmr')))
                 
                     
     end_time=time.time()
