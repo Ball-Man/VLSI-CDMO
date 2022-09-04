@@ -151,3 +151,9 @@ def sat_vlsi(width, nofrectangles, dimensions, max_height): #dimensions è una l
 
     # If unsatisfiable
     return None
+
+
+linear_optimization = partial(util.linear_optimization, sat_vlsi)
+
+
+binary_optimization = partial(util.binary_optimization, sat_vlsi)
