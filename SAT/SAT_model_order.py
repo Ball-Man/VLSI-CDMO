@@ -148,21 +148,46 @@ def sat_vlsi(width, nofrectangles, dimensions, min_height): #dimensions è una l
                 s.add(Not(UD[k][k1]))
                 s.add(Not(UD[k1][k]))
 
+    #instead of adding symmetry breaking for the model with rotations, we just constraint the biggest
+    #circuit to be in the left-bottom part of the region of its possible positions. DO NOT USE WITH LEX_ORDER SYMMETRY-BREAKING
 
-    hsymmcons = []                  #Horizontal symmetry breaking
-    for k in range(nofrectangles):      
-        hsymmcons.append([Not(i) for i in PX[k][0:width-dimensions[k][0]]])
-        hsymmcons[-1]=hsymmcons[-1][::-1]
-    PXH=[hsymmcons[k]+PX[k][width-dimensions[k][0]:] for k in range(nofrectangles)]
-    # print(PX, PXH)
-    s.add(lex_order(flatten(PX),flatten(PXH),'hsymm'))
 
-    vsymmcons=[]                    #Vertical symmetry breaking
-    for k in range(nofrectangles):
-        vsymmcons.append([Not(i) for i in PY[k][0:min_height-dimensions[k][1]]])
-        vsymmcons[-1]=vsymmcons[-1][::-1]
-    PYV=[vsymmcons[k]+PY[k][min_height-dimensions[k][1]:] for k in range(nofrectangles)]
-    s.add(lex_order(flatten(PY),flatten(PYV),'vsymm'))
+    #Maybe it is best to consider the smallest rectangle instead? There is more "information gain" I think
+
+##    maxdimension=max(max(dimensions[k] for k in range(nofrectangles)))
+##    indexmaxdimension=[k for k in range(nofrectangles) if maxdimension in dimensions[k]][0]
+    mindimension=min(min(dimensions[k] for k in range(nofrectangles)))
+    indexmindimension=[k for k in range(nofrectangles) if mindimension in dimensions[k]][0]
+
+
+    
+    
+##    s.add(PX[indexmaxdimension][(width-dimensions[indexmaxdimension][0])//2])
+##    s.add(PY[indexmaxdimension][(min_height - dimensions[indexmaxdimension][1])//2])
+    s.add(PX[indexmindimension][(width-dimensions[indexmindimension][0])//2])
+    s.add(PY[indexmindimension][(min_height - dimensions[indexmindimension][1])//2])
+
+    
+
+    
+
+##    hsymm = []                  #Horizontal symmetry breaking
+##    px=[]
+##    for k in range(nofrectangles):      
+##        hsymmcons=[Not(i) for i in PX[k][0:width-dimensions[k][0]]]
+##        hsymmcons=hsymmcons[::-1]
+##        hsymm+=hsymmcons
+##        px+=PX[k][0:width-dimensions[k][0]]
+##    s.add(lex_order(hsymm,px ,'hsymm'))
+##
+##    vsymm=[]                     #Vertical symmetry breaking
+##    py=[]                      
+##    for k in range(nofrectangles):
+##        vsymmcons=[Not(i) for i in PY[k][0:min_height-dimensions[k][1]]]
+##        vsymmcons=vsymmcons[::-1]
+##        vsymm+=vsymmcons
+##        py+=PY[k][0:min_height-dimensions[k][1]]
+##    s.add(lex_order(vsymm,py,'vsymm'))
     
                     
     end_time=time.time()
