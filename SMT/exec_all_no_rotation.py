@@ -23,7 +23,8 @@ def format_result(result):
 def main():
 
     # Define a new instance for each input file
-    for instance_file in glob.glob(pt.join(DEFAULT_INSTANCES_DIR, '*')):
+    for instance_file in sorted(
+            glob.glob(pt.join(DEFAULT_INSTANCES_DIR, '*'))):
         with open(instance_file) as fin:
             instance_data = json.load(fin)
 
