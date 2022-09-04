@@ -105,7 +105,7 @@ def solve(width, n, circuits, max_height=-1, name="no_rotation", solver="PULP_CB
     lex_less(y,
             [(height - circuits[i][1])/2 for i in range(n)],
             [(0, max_height - circuits[i][1]) for i in range(n)], # Domain of y
-            [(0, max_height - circuits[i][1]) for i in range(n)], # Domain of mirrored y
+            [((min_height - circuits[i][1])/2, (max_height - circuits[i][1])/2) for i in range(n)], # Domain of mirrored y
             model, "vertical_symmetry")
 
     # Equal circuits
