@@ -37,13 +37,17 @@ VARIABLE_RE = re.compile(r'p[xy]_(\d+)_(\d+)')
 def equal_vars(var1,var2): #boolean variables are equal iff they are equivalent
     return And(Or(Not(var1),var2),Or(Not(var2),var1))
 ##
-def lex_order(listvar1,listvar2,name, func = sqrt):  #lex_order_CSE
+
+def identity(x):
+    return x
+
+def lex_order(listvar1,listvar2,name, func = identity):  #lex_order_CSE
     constraints=[]
     n = len(listvar1)
     s = [Bool(f's_{name}_{i}') for i in range(n-1)]
-    constraints.append(Or(Not(listvar2[0]),listvar1[0])) #lex_geq
-    #constraints.append(Or(Not(listvar1[0]),listvar2[0]))   #lex_lesseq
-    constraints.append(equal_vars(s[0],equal_vars(listvar1[0],listvar2[0])))
+    #constraints.append(Or(Not(listvar2[0]),listvar1[0])) #lex_geq
+    constraints.append(Or(Not(listvar1[0]),listvar2[0]))   #lex_lesseq
+    constraints.append(equal_vars(s[0], equal_vars(listvar1[0],listvar2[0])))
     for i in range(int(func(n)) - 2):
         constraints.append(equal_vars(s[i+1], And(s[i], equal_vars(listvar1[i+1],listvar2[i+1]))))
     for i in range(int(func(n)) - 1):
@@ -178,7 +182,7 @@ def sat_vlsi(width, nofrectangles, dimensions, min_height): #dimensions è una l
                 if len(DR) > 2:
                     s.add(Or(DR))
 
-            if dimensions[k][0] + dimensions[k1][0] > width:        #if the sum of horizontal (vertical) sizes of circuits exceeds the max width (height),
+            if dimensions[k][0] + dimensions[k1][0] > width:        #(IMPLIED): if the sum of horizontal (vertical) sizes of circuits exceeds the max width (height),
                 s.add(Or(R[k],R[k1], Not(LR[k][k1])))               #then they can't be left or right (above or below) each other
                 s.add(Or(R[k],R[k1], Not(LR[k1][k])))
 
@@ -210,41 +214,63 @@ def sat_vlsi(width, nofrectangles, dimensions, min_height): #dimensions è una l
                 s.add(Or(Not(R[k]), Not(R[k1]), Not(UD[k][k1])))
                 s.add(Or(Not(R[k]), Not(R[k1]), Not(UD[k1][k])))
 
+    #instead of adding symmetry breaking for the model with rotations, we just constraint the biggest (smallest??)
+    #circuit to be in the left-bottom part of the region of its possible positions.
 
-    hsymmconsnr = []                  #Horizontal symmetry breaking
-    for k in range(nofrectangles):      
-        hsymmconsnr.append([Not(i) for i in PX[k][0:width-dimensions[k][0]]])
-        hsymmconsnr[-1]=hsymmconsnr[-1][::-1]
-    PXHNR=[hsymmconsnr[k]+PX[k][width-dimensions[k][0]:] for k in range(nofrectangles)]
-    s.add(Or(R[k],lex_order(flatten(PX),flatten(PXHNR),'hsymmnr')))
+    mindimension=min(min(dimensions[k] for k in range(nofrectangles)))
+    indexmindimension=[k for k in range(nofrectangles) if mindimension in dimensions[k]][0]
+    
+    s.add(Or(R[indexmindimension], PX[indexmindimension][(width-dimensions[indexmindimension][0])//2]))
+    s.add(Or(Not(R[indexmindimension]), PX[indexmindimension][(width-dimensions[indexmindimension][1])//2]))
+    s.add(Or(R[indexmindimension], PY[indexmindimension][(min_height-dimensions[indexmindimension][1])//2]))
+    s.add(Or(Not(R[indexmindimension]), PY[indexmindimension][(min_height-dimensions[indexmindimension][0])//2]))
+    
+##    maxdimension=max(max(dimensions[k] for k in range(nofrectangles)))
+##    indexmaxdimension=[k for k in range(nofrectangles) if maxdimension in dimensions[k]][0]
+##    
+##    s.add(Or(R[indexmaxdimension], PX[indexmaxdimension][(width-dimensions[indexmaxdimension][0])//2]))
+##    s.add(Or(Not(R[indexmaxdimension]), PX[indexmaxdimension][(width-dimensions[indexmaxdimension][1])//2]))
+##    s.add(Or(R[indexmaxdimension], PY[indexmaxdimension][(min_height-dimensions[indexmaxdimension][1])//2]))
+##    s.add(Or(Not(R[indexmaxdimension]), PY[indexmaxdimension][(min_height-dimensions[indexmaxdimension][0])//2]))
 
-    hsymmconsr = []                  #Horizontal symmetry breaking
-    for k in range(nofrectangles):      
-        hsymmconsr.append([Not(i) for i in PX[k][0:width-dimensions[k][1]]])
-        hsymmconsr[-1]=hsymmconsr[-1][::-1]
-    PXHR=[hsymmconsr[k]+PX[k][width-dimensions[k][1]:] for k in range(nofrectangles)]
-    s.add(Or(Not(R[k]),lex_order(flatten(PX),flatten(PXHR),'hsymmr')))
+##    hsymmnr=[]
+##    pxnr=[]
+##    for k in range(nofrectangles):  #Horizontal symmetry breaking
+##        hsymmconsnr=[Not(i) for i in PX[k][0:width-dimensions[k][0]]]
+##        hsymmconsnr=hsymmconsnr[::-1]
+####        print(hsymmconsnr)
+##        hsymmnr+=hsymmconsnr
+##        pxnr+=PX[k][0:width-dimensions[k][0]]]
+##    s.add(Or(R[k],lex_order(PX[k][0:width-dimensions[k][0]],hsymmconsnr,'hsymmnr')))
+##                
+##    for k in range(nofrectangles):      #Horizontal symmetry breaking
+##        hsymmconsr=[Not(i) for i in PX[k][0:width-dimensions[k][1]]]
+##        hsymmconsr=hsymmconsr[::-1]
+####        print(hsymmconsr)
+##        if len(hsymmconsr)>0:
+##            s.add(Or(Not(R[k]),lex_order(PX[k][0:width-dimensions[k][1]],hsymmconsr,'hsymmr')))
 
-    vsymmconsnr=[]                    #Vertical symmetry breaking
-    for k in range(nofrectangles):
-        vsymmconsnr.append([Not(i) for i in PY[k][0:min_height-dimensions[k][1]]])
-        vsymmconsnr[-1]=vsymmconsnr[-1][::-1]
-    PYVNR=[vsymmconsnr[k]+PY[k][min_height-dimensions[k][1]:] for k in range(nofrectangles)]
-    s.add(Or(R[k], lex_order(flatten(PY),flatten(PYVNR),'vsymmnr')))
 
-    vsymmconsr=[]                    #Vertical symmetry breaking
-    for k in range(nofrectangles):
-        vsymmconsr.append([Not(i) for i in PY[k][0:min_height-dimensions[k][0]]])
-        vsymmconsr[-1]=vsymmconsr[-1][::-1]
-    PYVR=[vsymmconsr[k]+PY[k][min_height-dimensions[k][0]:] for k in range(nofrectangles)]
-    s.add(Or(Not(R[k]), lex_order(flatten(PY),flatten(PYVR),'vsymmr')))
+##    vsymmconsnr=[]                    
+##    for k in range(nofrectangles):      #Vertical symmetry breaking
+##        vsymmconsnr.append([Not(i) for i in PY[k][0:min_height-dimensions[k][1]]])
+##        vsymmconsnr[-1]=vsymmconsnr[-1][::-1]
+##    PYVNR=[vsymmconsnr[k]+PY[k][min_height-dimensions[k][1]:] for k in range(nofrectangles)]
+##    s.add(Or(R[k], lex_order(flatten(PY),flatten(PYVNR),'vsymmnr')))
+##
+##    vsymmconsr=[]                    
+##    for k in range(nofrectangles):      #Vertical symmetry breaking
+##        vsymmconsr.append([Not(i) for i in PY[k][0:min_height-dimensions[k][0]]])
+##        vsymmconsr[-1]=vsymmconsr[-1][::-1]
+##    PYVR=[vsymmconsr[k]+PY[k][min_height-dimensions[k][0]:] for k in range(nofrectangles)]
+##    s.add(Or(Not(R[k]), lex_order(flatten(PY),flatten(PYVR),'vsymmr')))
                 
                     
     end_time=time.time()
     print('Model generated in', end_time - starting_time, 'seconds')
 
     #TIMEOUT:
-    #s.set('timeout', 300000)
+    s.set('timeout', 300000)
 
     check_result = s.check()
 
