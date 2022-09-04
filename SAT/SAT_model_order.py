@@ -151,6 +151,7 @@ def sat_vlsi(width, nofrectangles, dimensions, min_height): #dimensions è una l
     #instead of adding symmetry breaking for the model with rotations, we just constraint the biggest
     #circuit to be in the left-bottom part of the region of its possible positions. DO NOT USE WITH LEX_ORDER SYMMETRY-BREAKING
 
+
     #Maybe it is best to consider the smallest rectangle instead? There is more "information gain" I think
 
 ##    maxdimension=max(max(dimensions[k] for k in range(nofrectangles)))

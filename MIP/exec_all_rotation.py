@@ -1,9 +1,9 @@
-
 import sys
 import glob
 import json
 import os
 import os.path as pt
+import argparse
 
 from MIP_rotation import solve, supported_solver
 
@@ -22,41 +22,48 @@ def format_result(result):
         ret += " ".join([str(s) for s in r]) + "\n"
     return ret
 
-def main(solver=solvers[0]):
+def main(solver, time_limit, save_model):
     out_dir = f"{DEFAULT_OUTPUT_DIR}_{solver}"
 
     # Define a new instance for each input file
     for instance_file in glob.glob(pt.join(DEFAULT_INSTANCES_DIR, '*')):
         with open(instance_file) as fin:
             instance_data = json.load(fin)
+        basename = pt.splitext(pt.basename(instance_file))[0]
 
         print(f'solving instance: {pt.basename(instance_file)}')
-        result = solve(**instance_data, solver=solver)
+        print(instance_data)
+
+        if save_model:
+            result = solve(**instance_data, solver=solver, time_limit=time_limit, export_file=pt.join(out_dir, basename+".mps"))
+        else:
+            result = solve(**instance_data, solver=solver, time_limit=time_limit)
 
         dump_statistics(result["statistics"], result["status"])
-        print()
 
         # Dump results and statistics on file
         os.makedirs(out_dir, exist_ok=True)
-        
-        stats_basename = (f'stats-{pt.splitext(pt.basename(instance_file))[0]}'
-                        '.txt')
-        if result["status"] == "Optimal":
-            output_basename = (f'out-{pt.splitext(pt.basename(instance_file))[0]}'
-                        '.txt')
-            with open(pt.join(out_dir, output_basename), 'w') as fout:
-                fout.write(format_result(result["result"]))
 
-        with open(pt.join(out_dir, stats_basename), 'w') as fout:
+        
+        
+        if result["status"] == "Optimal":
+            with open(pt.join(out_dir, f'out-{basename}.txt'), 'w') as fout:
+                fout.write(format_result(result["result"]))
+        
+        with open(pt.join(out_dir, f'stats-{basename}.txt'), 'w') as fout:
             dump_statistics(result["statistics"], result["status"], fout)
 
 
 if __name__ == '__main__':
-    print(sys.argv)
-    if len(sys.argv) > 2 or (len(sys.argv) == 2 and sys.argv[1] not in solvers):
-        print("usage: prog.py [solver_name].")
-        print("Supported solver: ", solvers)
-    elif len(sys.argv) == 2 and sys.argv[1] in solvers:
-        main(sys.argv[1])
-    else:
-        main()
+    parser = argparse.ArgumentParser(description='Solve all instances of VLSI')
+    parser.add_argument("-s", dest="solver", nargs=1, default=[supported_solver()[0]], choices=supported_solver(),
+                        help=f"Choose the solver to use, Default={supported_solver()[0]}")
+    parser.add_argument("-t", dest="time_limit", default=300, type=int, 
+                        help="Set the time limit to solver an instance. Once passed the instance is considered not solved")
+    parser.add_argument("-sm", dest="save_model", default=False, action="store_true",
+                        help="Save the models in mps format")
+    args = parser.parse_args()
+
+    main(args.solver[0], args.time_limit, args.save_model)
+
+
