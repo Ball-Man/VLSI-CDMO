@@ -89,6 +89,15 @@ constraint symmetry_breaking_constraint(
   )
 );
 
+% Square circuits do not need to be rotated
+constraint symmetry_breaking_constraint(
+  forall (i in 1..n) (
+    if circuits[i, 0] == circuits[i, 1] then
+      rotated[i] = false
+    endif
+  )
+);
+
 % Search strategy
 /*
 Variables (position coordinates) are selected following decreasing area order.
