@@ -1,7 +1,9 @@
 import time
 from itertools import combinations
+from functools import partial
 
 from z3 import *
+import util
 
 
 def at_least_one(bool_vars):
