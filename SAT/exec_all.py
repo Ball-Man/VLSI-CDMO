@@ -14,7 +14,8 @@ import argparse
 
 from SAT_model import linear_optimization as sat_vlsi
 from SAT_model_rotations import sat_vlsi as sat_vlsi_rot
-from SAT_model_order_rotations import linear_optimization as sat_vlsi_ord
+from SAT_model_order import linear_optimization as sat_vlsi_ord
+from SAT_model_order_rotations import linear_optimization as sat_vlsi_ord_rot
 
 
 # Path to json input instances, converted using convert_instances.py
@@ -112,7 +113,7 @@ if __name__ == '__main__':
 
     solve_func = sat_vlsi
     if args.rotation and args.order:
-        raise NotImplementedError('rotation order model not implemented')
+        solve_func = sat_vlsi_ord_rot
     elif args.order:
         solve_func = sat_vlsi_ord
     elif args.rotation:

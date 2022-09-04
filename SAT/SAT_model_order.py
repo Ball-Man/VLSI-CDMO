@@ -154,7 +154,7 @@ def sat_vlsi(width, nofrectangles, dimensions, min_height): #dimensions è una l
         hsymmcons.append([Not(i) for i in PX[k][0:width-dimensions[k][0]]])
         hsymmcons[-1]=hsymmcons[-1][::-1]
     PXH=[hsymmcons[k]+PX[k][width-dimensions[k][0]:] for k in range(nofrectangles)]
-    print(PX, PXH)
+    # print(PX, PXH)
     s.add(lex_order(flatten(PX),flatten(PXH),'hsymm'))
 
     vsymmcons=[]                    #Vertical symmetry breaking
