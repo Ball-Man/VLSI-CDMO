@@ -11,32 +11,11 @@ import util
 VARIABLE_RE = re.compile(r'p[xy]_(\d+)_(\d+)')
 
 
-##def at_least_one(bool_vars):
-##    return Or(bool_vars)
-##
-###SEQUENTIAL ENCODING:
-##def at_most_one(bool_vars, name):
-##    if len(bool_vars)==1:
-##        return True
-##    constraints = []
-##    n = len(bool_vars)
-##    s = [Bool(f's_{name}_{i}') for i in range(n - 1)]
-##    constraints.append(Or(Not(bool_vars[0]), s[0]))
-##    constraints.append(Or(Not(bool_vars[n-1]), Not(s[n-2])))
-##    for i in range(1, n - 1):
-##        constraints.append(Or(Not(bool_vars[i]), s[i]))
-##        constraints.append(Or(Not(bool_vars[i]), Not(s[i-1])))
-##        constraints.append(Or(Not(s[i-1]), s[i]))
-##    return And(constraints)
-##
 def equal_vars(var1,var2): #boolean variables are equal iff they are equivalent
     return And(Or(Not(var1),var2),Or(Not(var2),var1))
-##
-
 
 def identity(x):
     return x
-
 
 def lex_order(listvar1,listvar2,name, func = identity):  #lex_order_CSE
     constraints=[]
@@ -48,13 +27,10 @@ def lex_order(listvar1,listvar2,name, func = identity):  #lex_order_CSE
     for i in range(int(func(n)) - 2):
         constraints.append(equal_vars(s[i+1], And(s[i], equal_vars(listvar1[i+1],listvar2[i+1]))))
     for i in range(int(func(n)) - 1):
-        constraints.append(Or(Not(s[i]),(Or(Not(listvar2[i+1]),listvar1[i+1])))) #lex_geq
-        #constraints.append(Or(Not(s[i]),(Or(Not(listvar1[i+1]),listvar2[i+1])))) #lex_lesseq
+        #constraints.append(Or(Not(s[i]),(Or(Not(listvar2[i+1]),listvar1[i+1])))) #lex_geq
+        constraints.append(Or(Not(s[i]),(Or(Not(listvar1[i+1]),listvar2[i+1])))) #lex_lesseq
     return And(constraints)
-##        
-##
-##def exactly_one(bool_vars, name):
-##    return And(at_least_one(bool_vars), at_most_one(bool_vars, name))
+
 ####################################################################################################
 
 #flatten list:
@@ -211,6 +187,7 @@ def sat_vlsi(width, nofrectangles, dimensions, min_height, timeout=300000): #dim
                 s.add(Or(Not(R[k]), Not(R[k1]), Not(UD[k][k1])))
                 s.add(Or(Not(R[k]), Not(R[k1]), Not(UD[k1][k])))
 
+    
     #instead of adding symmetry breaking for the model with rotations, we just constraint the biggest (smallest??)
     #circuit to be in the left-bottom part of the region of its possible positions.
 
@@ -229,38 +206,6 @@ def sat_vlsi(width, nofrectangles, dimensions, min_height, timeout=300000): #dim
 ##    s.add(Or(Not(R[indexmaxdimension]), PX[indexmaxdimension][(width-dimensions[indexmaxdimension][1])//2]))
 ##    s.add(Or(R[indexmaxdimension], PY[indexmaxdimension][(min_height-dimensions[indexmaxdimension][1])//2]))
 ##    s.add(Or(Not(R[indexmaxdimension]), PY[indexmaxdimension][(min_height-dimensions[indexmaxdimension][0])//2]))
-
-##    hsymmnr=[]
-##    pxnr=[]
-##    for k in range(nofrectangles):  #Horizontal symmetry breaking
-##        hsymmconsnr=[Not(i) for i in PX[k][0:width-dimensions[k][0]]]
-##        hsymmconsnr=hsymmconsnr[::-1]
-####        print(hsymmconsnr)
-##        hsymmnr+=hsymmconsnr
-##        pxnr+=PX[k][0:width-dimensions[k][0]]]
-##    s.add(Or(R[k],lex_order(PX[k][0:width-dimensions[k][0]],hsymmconsnr,'hsymmnr')))
-##                
-##    for k in range(nofrectangles):      #Horizontal symmetry breaking
-##        hsymmconsr=[Not(i) for i in PX[k][0:width-dimensions[k][1]]]
-##        hsymmconsr=hsymmconsr[::-1]
-####        print(hsymmconsr)
-##        if len(hsymmconsr)>0:
-##            s.add(Or(Not(R[k]),lex_order(PX[k][0:width-dimensions[k][1]],hsymmconsr,'hsymmr')))
-
-
-##    vsymmconsnr=[]                    
-##    for k in range(nofrectangles):      #Vertical symmetry breaking
-##        vsymmconsnr.append([Not(i) for i in PY[k][0:min_height-dimensions[k][1]]])
-##        vsymmconsnr[-1]=vsymmconsnr[-1][::-1]
-##    PYVNR=[vsymmconsnr[k]+PY[k][min_height-dimensions[k][1]:] for k in range(nofrectangles)]
-##    s.add(Or(R[k], lex_order(flatten(PY),flatten(PYVNR),'vsymmnr')))
-##
-##    vsymmconsr=[]                    
-##    for k in range(nofrectangles):      #Vertical symmetry breaking
-##        vsymmconsr.append([Not(i) for i in PY[k][0:min_height-dimensions[k][0]]])
-##        vsymmconsr[-1]=vsymmconsr[-1][::-1]
-##    PYVR=[vsymmconsr[k]+PY[k][min_height-dimensions[k][0]:] for k in range(nofrectangles)]
-##    s.add(Or(Not(R[k]), lex_order(flatten(PY),flatten(PYVR),'vsymmr')))
                 
                     
     end_time=time.time()
@@ -279,7 +224,6 @@ def sat_vlsi(width, nofrectangles, dimensions, min_height, timeout=300000): #dim
         solutions_x=[[PX[k][i] for i in range(width-min(dimensions[k])+1) if m.evaluate(PX[k][i]) == True][0] for k in range(nofrectangles)]
         solutions_y=[[PY[k][i] for i in range(min_height - min(dimensions[k]) +1) if m.evaluate(PY[k][i]) == True][0] for k in range(nofrectangles)]
         rotations = map(m.evaluate, R)
-        #print(m)
         return (min_height, adapt_solution(solutions_x, solutions_y,
                                            rotations),
                 s.statistics(), end_time - starting_time)
