@@ -79,16 +79,8 @@ def sat_vlsi(width, nofrectangles, dimensions, min_height, timeout=300000): #dim
 
     s = Solver()
     
-    total_area = 0
-    for i in range(nofrectangles):
-        total_area += dimensions[i][0] * dimensions[i][1]
-    if total_area % width == 0:         #If total area is not divisible by width we round up
-        min_height = max(total_area // width, max([dimensions[i][1] for i in range(nofrectangles)]))
-    else:
-        min_height = max(total_area // width + 1, max([dimensions[i][1] for i in range(nofrectangles)]))
-    
     X = [[[Bool(f'x_{i}_{j}_{k}') for i in range(width - dimensions[k][0] + 1)] for j in range(min_height - dimensions[k][1] + 1)] for k in range(nofrectangles)]
-    #Voglio che X[k][j][i] == 1 se e solo se l'origine del rettangolo k è nelle coordinate i,j
+    #X[k][j][i] == 1 if and only if the origin of circuit k has coordinates i,j
 
     starting_time=time.time()
     print('generating solver:')
