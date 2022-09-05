@@ -10,27 +10,6 @@ import util
 
 VARIABLE_RE = re.compile(r'p[xy]_(\d+)_(\d+)')
 
-
-def equal_vars(var1,var2): #boolean variables are equal iff they are equivalent
-    return And(Or(Not(var1),var2),Or(Not(var2),var1))
-
-def identity(x):
-    return x
-
-def lex_order(listvar1,listvar2,name, func = identity):  #lex_order_CSE
-    constraints=[]
-    n = len(listvar1)
-    s = [Bool(f's_{name}_{i}') for i in range(n-1)]
-    #constraints.append(Or(Not(listvar2[0]),listvar1[0])) #lex_geq
-    constraints.append(Or(Not(listvar1[0]),listvar2[0]))   #lex_lesseq
-    constraints.append(equal_vars(s[0], equal_vars(listvar1[0],listvar2[0])))
-    for i in range(int(func(n)) - 2):
-        constraints.append(equal_vars(s[i+1], And(s[i], equal_vars(listvar1[i+1],listvar2[i+1]))))
-    for i in range(int(func(n)) - 1):
-        #constraints.append(Or(Not(s[i]),(Or(Not(listvar2[i+1]),listvar1[i+1])))) #lex_geq
-        constraints.append(Or(Not(s[i]),(Or(Not(listvar1[i+1]),listvar2[i+1])))) #lex_lesseq
-    return And(constraints)
-
 ####################################################################################################
 
 #flatten list:
