@@ -1,6 +1,7 @@
 import time
 from itertools import combinations
 from functools import partial
+from math import sqrt
 
 from z3 import *
 import util
@@ -32,9 +33,9 @@ def lex_order(listvar1,listvar2,name):  #lex_order_CSE
     s = [Bool(f's_{name}_{i}') for i in range(n-1)]
     constraints.append(Or(Not(listvar2[0]),listvar1[0]))
     constraints.append(equal_vars(s[0],equal_vars(listvar1[0],listvar2[0])))
-    for i in range(n//2-2):
+    for i in range(int(sqrt(n))-2):
         constraints.append(equal_vars(s[i+1], And(s[i], equal_vars(listvar1[i+1],listvar2[i+1]))))
-    for i in range(n//2-1):
+    for i in range(int(sqrt(n))-1):
         constraints.append(Or(Not(s[i]),(Or(Not(listvar2[i+1]),listvar1[i+1]))))
     return And(constraints)
 
