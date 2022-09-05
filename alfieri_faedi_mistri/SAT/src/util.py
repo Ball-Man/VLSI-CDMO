@@ -2,11 +2,6 @@
 from math import ceil
 
 
-def flatten(l):
-    """Return a flattened list from a list of lists."""
-    return [item for sublist in l for item in sublist]
-
-
 def dict_from_stats(statistics) -> dict:
     """Return a dictionary from z3 statistics."""
     return {key: statistics.get_key_value(key) for key in statistics.keys()}
@@ -22,11 +17,11 @@ def linear_optimization(solve_fun, width, nofrectangles, dimensions,
 
     for i in range(nofrectangles):
         total_area += dimensions[i][0] * dimensions[i][1]
+    # If total area is not divisible by width we round up
     area_min_height = ceil(total_area / width)
 
-    # If total area is not divisible by width we round up
     if rotations:
-        min_height = max(area_min_height, max(flatten(dimensions)))
+        min_height = max(area_min_height, max(map(min, dimensions)))
     else:
         min_height = max(area_min_height,
                          max([dimensions[i][1] for i in range(nofrectangles)]))
@@ -65,10 +60,12 @@ def binary_optimization(solve_fun, width, nofrectangles, dimensions,
 
     for i in range(nofrectangles):
         total_area += dimensions[i][0] * dimensions[i][1]
+    # If total area is not divisible by width we round up
+    area_min_height = ceil(total_area / width)
 
     # If total area is not divisible by width we round up
     if rotations:
-        min_height = max(area_min_height, max(flatten(dimensions)))
+        min_height = max(area_min_height, max(map(min, dimensions)))
     else:
         min_height = max(area_min_height,
                          max([dimensions[i][1] for i in range(nofrectangles)]))
