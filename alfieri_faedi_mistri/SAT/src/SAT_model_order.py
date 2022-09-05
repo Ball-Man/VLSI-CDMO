@@ -11,25 +11,6 @@ import util
 
 VARIABLE_RE = re.compile(r'p[xy]_(\d+)_(\d+)')
 
-
-##def at_least_one(bool_vars):
-##    return Or(bool_vars)
-
-#SEQUENTIAL ENCODING:
-##def at_most_one(bool_vars, name):
-##    if len(bool_vars)==1:
-##        return True
-##    constraints = []
-##    n = len(bool_vars)
-##    s = [Bool(f's_{name}_{i}') for i in range(n - 1)]
-##    constraints.append(Or(Not(bool_vars[0]), s[0]))
-##    constraints.append(Or(Not(bool_vars[n-1]), Not(s[n-2])))
-##    for i in range(1, n - 1):
-##        constraints.append(Or(Not(bool_vars[i]), s[i]))
-##        constraints.append(Or(Not(bool_vars[i]), Not(s[i-1])))
-##        constraints.append(Or(Not(s[i-1]), s[i]))
-##    return And(constraints)
-##
 def equal_vars(var1,var2): #boolean variables are equal iff they are equivalent
     return And(Or(Not(var1),var2),Or(Not(var2),var1))
 
@@ -49,10 +30,7 @@ def lex_order(listvar1,listvar2,name, func = identity):  #lex_order_CSE
         constraints.append(Or(Not(s[i]),(Or(Not(listvar2[i+1]),listvar1[i+1])))) #lex_geq
         #constraints.append(Or(Not(s[i]),(Or(Not(listvar1[i+1]),listvar2[i+1])))) #lex_lesseq
     return And(constraints)
-##        
-##
-##def exactly_one(bool_vars, name):
-##    return And(at_least_one(bool_vars), at_most_one(bool_vars, name))
+
 ####################################################################################################
 
 #flatten list:
@@ -61,7 +39,7 @@ def flatten(l):
 ####################################################################################################
 
 
-def sat_vlsi(width, nofrectangles, dimensions, min_height, timeout=300000): #dimensions è una lista di coppie di coordinate [x,y]
+def sat_vlsi(width, nofrectangles, dimensions, min_height, timeout=300000): #dimensions is a list of ordered pairs [x,y]
     
     s = Solver()
 
@@ -107,7 +85,7 @@ def sat_vlsi(width, nofrectangles, dimensions, min_height, timeout=300000): #dim
                 if 0 <= i+dimensions[k1][0] <= width-dimensions[k][0]:
                     B.append(Not(PX[k][i+dimensions[k1][0]]))
                 
-                if len(A) > 1:      #This means that there isn't only the Not(LR) variable in A
+                if len(A) > 1:      #This means that there isn't only the Not(LR) literal in A
                     s.add(Or(A))
                 
                 if len(B) > 1:      #Same as above
@@ -144,12 +122,10 @@ def sat_vlsi(width, nofrectangles, dimensions, min_height, timeout=300000): #dim
                 s.add(Not(UD[k][k1]))
                 s.add(Not(UD[k1][k]))
 
-    #instead of adding symmetry breaking for the model with rotations, we just constraint the biggest
-    #circuit to be in the left-bottom part of the region of its possible positions. DO NOT USE WITH LEX_ORDER SYMMETRY-BREAKING
-
-
-    #Maybe it is best to consider the smallest rectangle instead? There is more "information gain" I think
-
+   
+    #we constraint a circuit which has as one its sizes the smallest size provided in the instance to be in the left-bottom region of its admissible positions
+    #(we can do the same with an arbitrary rectangle)
+    
 ##    maxdimension=max(max(dimensions[k] for k in range(nofrectangles)))
 ##    indexmaxdimension=[k for k in range(nofrectangles) if maxdimension in dimensions[k]][0]
     mindimension=min(min(dimensions[k] for k in range(nofrectangles)))
@@ -160,7 +136,7 @@ def sat_vlsi(width, nofrectangles, dimensions, min_height, timeout=300000): #dim
     s.add(PX[indexmindimension][(width-dimensions[indexmindimension][0])//2])
     s.add(PY[indexmindimension][(min_height - dimensions[indexmindimension][1])//2])
 
-##    hsymm = []                  #Horizontal symmetry breaking
+##    hsymm = []                  #Horizontal symmetry breaking. This and the vertical symmetry breaking are mutually exclusive with the above constraint!!!
 ##    px=[]
 ##    for k in range(nofrectangles):      
 ##        hsymmcons=[Not(i) for i in PX[k][0:width-dimensions[k][0]]]
