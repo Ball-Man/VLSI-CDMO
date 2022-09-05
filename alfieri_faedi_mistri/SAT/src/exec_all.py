@@ -38,7 +38,7 @@ def dump_statistics(statistics, build_time, fp=sys.stdout):
     json.dump(statistics, fp, indent=4)
     
 
-def main(solve_func):
+def main(solve_func, rot):
     # Solve SAT problem for each instance
     for instance_file in sorted(
             glob.glob(pt.join(DEFAULT_INSTANCES_DIR, '*'))):
@@ -48,7 +48,8 @@ def main(solve_func):
         print(f'solving instance: {pt.basename(instance_file)}')
         model_results = solve_func(instance_data['width'], instance_data['n'],
                                    instance_data['circuits'],
-                                   instance_data['max_height'])
+                                   instance_data['max_height'],
+                                   rotations=rot)
 
         # If unsolvable (it should never happen with our instances)
         if model_results is None:
@@ -114,4 +115,4 @@ if __name__ == '__main__':
         solve_func = sat_vlsi_ord
     elif args.rotation:
         solve_func = sat_vlsi_rot
-    main(solve_func)
+    main(solve_func, args.rotation)

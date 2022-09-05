@@ -2,13 +2,18 @@
 from math import ceil
 
 
+def flatten(l):
+    """Return a flattened list from a list of lists."""
+    return [item for sublist in l for item in sublist]
+
+
 def dict_from_stats(statistics) -> dict:
     """Return a dictionary from z3 statistics."""
     return {key: statistics.get_key_value(key) for key in statistics.keys()}
 
 
 def linear_optimization(solve_fun, width, nofrectangles, dimensions,
-                        max_height, timeout=300000):
+                        max_height, timeout=300000, rotations=False):
     """Apply linear optimization to solve_fun, passing other parameters."""
     total_solve_time = 0
     total_build_time = 0
@@ -17,10 +22,14 @@ def linear_optimization(solve_fun, width, nofrectangles, dimensions,
 
     for i in range(nofrectangles):
         total_area += dimensions[i][0] * dimensions[i][1]
+    area_min_height = ceil(total_area / width)
 
     # If total area is not divisible by width we round up
-    min_height = max(ceil(total_area / width),
-                     max([dimensions[i][1] for i in range(nofrectangles)]))
+    if rotations:
+        min_height = max(area_min_height, max(flatten(dimensions)))
+    else:
+        min_height = max(area_min_height,
+                         max([dimensions[i][1] for i in range(nofrectangles)]))
 
     while True:
         # print('Trying height =', min_height)
@@ -49,7 +58,7 @@ def linear_optimization(solve_fun, width, nofrectangles, dimensions,
 
 
 def binary_optimization(solve_fun, width, nofrectangles, dimensions,
-                        max_height, timeout=300000):
+                        max_height, timeout=300000, rotations=False):
     """Apply binary optimization to solve_fun, passing other parameters."""
 
     total_area = 0
@@ -57,8 +66,12 @@ def binary_optimization(solve_fun, width, nofrectangles, dimensions,
     for i in range(nofrectangles):
         total_area += dimensions[i][0] * dimensions[i][1]
 
-    min_height = max(ceil(total_area / width),
-                     max([dimensions[i][1] for i in range(nofrectangles)]))
+    # If total area is not divisible by width we round up
+    if rotations:
+        min_height = max(area_min_height, max(flatten(dimensions)))
+    else:
+        min_height = max(area_min_height,
+                         max([dimensions[i][1] for i in range(nofrectangles)]))
     #max_height = sum([dimensions[k][1] for k in range(nofrectangles)])
 
     if min_height == max_height:
