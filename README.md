@@ -23,6 +23,7 @@ Plots in the report were obtained by using the `barplot` script. `python barplot
 
 ## Requirements
 Python >= 3.8
+
 Python packages (can be found in `requirements.txt`:
 * *pyglet* (visualization)
 * *minizinc* (constraint programming)
@@ -31,6 +32,7 @@ Python packages (can be found in `requirements.txt`:
 * *z3-solver (SAT)
 * *matplotlib* (plots)
 * *numpy* (plots)
+
 Minizinc IDE >= 2.6.X (IDE version installs the necessary solvers, also on linux)
 
 ### Python requirements via pip
